@@ -1,0 +1,3 @@
+D:\BMS\DApps\MasterDApp\obj\Debug\MasterDApp.njsproj.AssemblyReference.cache
+D:\BMS\DApps\MasterDApp\obj\Debug\MasterDApp.njsproj.CoreCompileInputs.cache
+D:\BMS\DApps\MasterDApp\bin\Microsoft.NodejsTools.WebRole.dll

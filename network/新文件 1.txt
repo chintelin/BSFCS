@@ -1,0 +1,27 @@
+
+class SalesTerm
+{
+    ProductName = '';
+    RefWorkPlanId = '';
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    Stop = '';
+    constructor(name, refwpid)
+    {
+        this.ProductName=name;
+        this.RefWorkPlanId =refwpid;
+    }
+}
+
+class SalesOrder{
+	ID = ""
+    SalesTerms = {}; // key=id, value = salesterm
+    Release = ""
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    Stop = '';
+    constructor(id) {
+        this.ID = id;
+    }
+    AddSalesTerm(id,term) {
+        this.SalesTerms[id]=term;
+    }  
+}
