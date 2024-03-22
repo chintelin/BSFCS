@@ -6,6 +6,5 @@
 
 'use strict';
 
-
 const bmes_management = require('./lib/mgmt');
 module.exports.contracts = [bmes_management];

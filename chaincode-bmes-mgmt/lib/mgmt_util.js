@@ -1,6 +1,3 @@
-// JavaScript source code
-/* eslint-env es6 */
-/* eslint-disable no-console */
 'use strict';
 
 class WorkStation {
@@ -20,14 +17,14 @@ class WorkStation {
 
 class Transition {
     ID = '0';
-    Machine = '';
+    WorkStation = '';
     Function = '';
     Parameter = ''; //seperate by comma ','
     OK_To = '0';
     NOK_To = '0';
-    constructor(id, machine, func, par, ok, nok) {
+    constructor(id, ws, func, par, ok, nok) {
         this.ID = id;
-        this.Machine = machine;
+        this.WorkStation = ws;
         this.Function = func;
         this.Parameter = par;
         this.OK_To = ok;
@@ -37,7 +34,7 @@ class Transition {
 
 class WorkPlan {
     ID = '';
-    TransitionList = {}
+    TransitionList = {} //key = id, value = transition
     constructor(id) {
         this.ID = id;
     }
@@ -52,14 +49,13 @@ class SalesTerm {
     RefWorkPlan = '';
     State = 'Waiting'; //Waiting > Started > Finished
     Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    Stop = '';
+    End = '';
     constructor(id, product_name, ref_workplan) {
         this.ID = id;
         this.ProductName = product_name;
         this.RefWorkPlan = ref_workplan;
     }
 }
-
 
 class SalesOrder {
     ID = ""

@@ -27,7 +27,7 @@ const walletProdPath = path.join(__dirname,'wallet_' + ext_prod_id );
 const org1UserId = 'appUserMgnt' + ext_mgmt_id;
 const org2UserId = 'appUserProd' + ext_prod_id;
 
-const RED = '\x1b[31m\n';
+const RED = '\x1b[35m\n';
 const GREEN = '\x1b[32m\n';
 const BLUE = '\x1b[34m';
 const RESET = '\x1b[0m';
@@ -37,6 +37,19 @@ const EnableMgmtDocInit = false;
 
 function prettyJSONString(inputString) {
 	return JSON.stringify(JSON.parse(inputString), null, 2);
+}
+function showTransactionData(transactionData) {
+	const creator = transactionData.actions[0].header.creator;
+	console.log(`    - submitted by: ${creator.mspid}-${creator.id_bytes.toString('hex')}`);
+	for (const endorsement of transactionData.actions[0].payload.action.endorsements) {
+		console.log(`    - endorsed by: ${endorsement.endorser.mspid}-${endorsement.endorser.id_bytes.toString('hex')}`);
+	}
+	const chaincode = transactionData.actions[0].payload.chaincode_proposal_payload.input.chaincode_spec;
+	console.log(`    - chaincode:${chaincode.chaincode_id.name}`);
+	console.log(`    - function:${chaincode.input.args[0].toString()}`);
+	for (let x = 1; x < chaincode.input.args.length; x++) {
+		console.log(`    - arg:${chaincode.input.args[x].toString()}`);
+	}
 }
 
 async function main() {
@@ -132,16 +145,18 @@ async function main() {
 			console.log('\n--> Submit Transaction: InitCarrier....');		
 			result = await contractProd.submitTransaction('InitCarrier');	
 			
-			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');		
-			await contractProd.submitTransaction('StartSaleOrder','1000');
+			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');	
+			let dt = new Date(Date.now());
+			await contractProd.submitTransaction('StartSaleOrder','1000', dt.toISOString());
 			//console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
 
 			console.log('\n--> Submit Transaction: GetAllObject....');		 
 			result = await contractProd.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 			
-			console.log('\n--> Submit Transaction: Checkin @ASRS....');		
-			let checkInResult = await contractProd.submitTransaction('CheckIn','1',"ASRS");
+			console.log('\n--> Submit Transaction: Checkin @ASRS....');	
+			dt = new Date(Date.now());		
+			let checkInResult = await contractProd.submitTransaction('CheckIn','1',"ASRS", dt.toISOString());
 			let obj_checkInResult_ASRS = JSON.parse(checkInResult);
 			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
 
@@ -150,18 +165,21 @@ async function main() {
 			{
 				let func = obj_checkInResult_ASRS.Function;
 				let par = obj_checkInResult_ASRS.Parameter;
-				console.log(`${GREEN} ASRS is starting the transition using function:${func} and parameter:${par} `);
+				dt = new Date(Date.now());	
+				console.log(`${GREEN} ASRS is starting the transition using function:${func} and parameter:${par} at ${dt.toISOString()} `);
 				console.log('\n--> Submit Transaction: ReportTransitionStart @ASRS....');		
-				result = await contractProd.submitTransaction('ReportTransitionStart','1',"ASRS");
+				
+				result = await contractProd.submitTransaction('ReportTransitionStart','1',"ASRS", dt.toISOString());
 
 				let runTransition = async (function_name,parameterlist) => {
 					new Promise((resolve) => setTimeout(resolve, 3000));//replace this segment with machine control function
 				}
 
 				let result_after_transition = await runTransition();
-				console.log(`${GREEN} ASRS is complete the transition using function:${func} and parameter:${par} `);
+				dt = new Date(Date.now());	
+				console.log(`${GREEN} ASRS is complete the transition using function:${func} and parameter:${par} at ${dt.toISOString()}`);
 				console.log('\n--> Submit Transaction: ReportTransitionEnd @ASRS....');		
-				result = await contractProd.submitTransaction('ReportTransitionEnd','1',"ASRS");
+				result = await contractProd.submitTransaction('ReportTransitionEnd','1',"ASRS", dt.toISOString());
 
 				console.log(`${GREEN} ASRS is executing "check out" process `);
 				console.log('\n--> Submit Transaction: ChectOut @ASRS....');		
@@ -170,9 +188,13 @@ async function main() {
 			}
 			
 
-			//console.log('\n--> Submit Transaction: GetAllObject....');		 
-			//result = await contractProd.submitTransaction('GetAllObject');
-			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			console.log('\n--> Submit PROD Transaction: GetAllObject....');		 
+			result = await contractProd.submitTransaction('GetAllObject');
+			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
+			console.log('\n--> Submit MGMT Transaction: GetAllObject....');		 
+			result = await contractMgmt.submitTransaction('GetAllObject');
+			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
 		} finally {
 			// Disconnect from the gateway when the application is closing
