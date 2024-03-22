@@ -76,7 +76,7 @@ class SalesOrder
     Release = ""
     SalesTerms = {}; // key=id, value = salesterm
     Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    Stop = '';
+    End = '';
     constructor(id) {
         this.ID = id;
     }
@@ -213,7 +213,7 @@ class BMES_MGMT extends Contract
         
         let workPlan = new WorkPlan("1000","Demo Product");
         workPlan.AddTransition('10',new Transition("10",'ASRS','2','210','20','99'));
-        workPlan.AddTransition('20',new Transition("20",'Magazine','','','30','99'));
+        workPlan.AddTransition('20',new Transition("20",'Magazine','0','0','30','99'));
         workPlan.AddTransition('30',new Transition("30",'Press','5','5','40','99'));
         workPlan.AddTransition('40',new Transition("40",'ASRS','1','1210','0','0'));
         workPlan.AddTransition('99',new Transition("99",'ASRS','1','9210','0','0'));
@@ -353,7 +353,21 @@ class BMES_MGMT extends Contract
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
         console.info(`Sales Order ${id} ${so} data is put into the mgmt legder`);
     }
+    async UpdateSalesOrderState(ctx, id, str_state_name, str_ISO8601_timestamp) {
+        console.info(`Execute GetSalesOrderState`)
+        // prepare a buffer
+        //generate composite_key
+        let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
 
+        //find state by the composite_key
+        const soJSON = await ctx.stub.getState(key);
+        let obj_so = JSON.parse(soJSON.toString());
+        if (str_ISO8601_timestamp == "Release" || str_ISO8601_timestamp == "Start" || str_ISO8601_timestamp == "End") {
+            obj_so[str_state_name] = str_ISO8601_timestamp;
+        }
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(obj_so)));
+        console.info(`Sales Order ${id} state ${str_state_name} is updated with ${str_ISO8601_timestamp}`);
+    }
 
 
 

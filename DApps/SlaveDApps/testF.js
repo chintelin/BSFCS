@@ -107,7 +107,7 @@ async function main(){
         IsOnDuty = obj_checkInResult.IsOnDuty ;
       }
 
-        if(IsOnDuty == "Yes" || !IsConnectToBMES) 
+    if(IsOnDuty == "Yes" || !IsConnectToBMES) 
     {
       //check in 成功寫小車 stats = 52, set transition table
       if(IsConnectToBMES) {

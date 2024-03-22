@@ -118,7 +118,7 @@ class BMES_PROD extends Contract {
     }
 
     //start up a sales order with its id (string format)
-    async StartSaleOrder(ctx, id_salesOrder_str) 
+    async StartSaleOrder(ctx, id_salesOrder_str, str_ISO8091_timestamp) 
     {
           console.info(`=== Function StartSaleOrder is executed ===`); 
 
@@ -409,7 +409,7 @@ class BMES_PROD extends Contract {
     
 
 
-    async ReportTransitionStart(ctx, str_carrier_id, str_machine_name){
+    async ReportTransitionStart(ctx, str_carrier_id, str_machine_name, str_ISO8091_timestamp){
 
           console.info(`=== Function ReportTransitionStart() is executed ===`);
 
@@ -439,7 +439,7 @@ class BMES_PROD extends Contract {
           console.info(`obj_state_workTerm type: ${typeof (obj_state_workTerm)} \n  and value: ${JSON.stringify(obj_state_workTerm, null, 4)}`);
 
         //update starting 
-        obj_state_workTerm.Start = new Date().toISOString();
+        obj_state_workTerm.Start = str_ISO8091_timestamp;
           console.info(`444`);
 
         let res = await ctx.stub.putState(key_curWorkTermId, Buffer.from(JSON.stringify(obj_state_workTerm)));
@@ -450,7 +450,7 @@ class BMES_PROD extends Contract {
     }
     
 
-    async ReportTransitionEnd(ctx, str_carrier_id, str_machine_name){
+    async ReportTransitionEnd(ctx, str_carrier_id, str_machine_name, str_ISO8091_timestamp){
 
           console.info(`=== Function ReportTransitionEnd() is executed ===`);
 
@@ -481,7 +481,7 @@ class BMES_PROD extends Contract {
           console.info(`obj_state_workTerm type: ${typeof (obj_state_workTerm)} \n  and value: ${JSON.stringify(obj_state_workTerm, null, 4)}`);
 
         //update starting 
-        obj_state_workTerm.End = new Date().toISOString();
+        obj_state_workTerm.End = str_ISO8091_timestamp;
 
         let res = await ctx.stub.putState(key_curWorkTermId, Buffer.from(JSON.stringify(obj_state_workTerm)));
         let message = new ProductionMessage(str_machine_name, "contract", "proc_start", curWorkTermId);

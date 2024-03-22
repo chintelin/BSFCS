@@ -168,6 +168,7 @@ async function main() {
 				result = await contractProd.submitTransaction('ChectOut','1',"ASRS");
 				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
 			}
+			
 
 			//console.log('\n--> Submit Transaction: GetAllObject....');		 
 			//result = await contractProd.submitTransaction('GetAllObject');
