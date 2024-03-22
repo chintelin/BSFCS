@@ -1,6 +1,0 @@
-D:\BMS\DApps\DApps\MasterClient\obj\Debug\MasterClient.njsproj.AssemblyReference.cache
-D:\BMS\DApps\DApps\MasterClient\obj\Debug\MasterClient.njsproj.CoreCompileInputs.cache
-D:\BMS\DApps\DApps\MasterClient\bin\Microsoft.NodejsTools.WebRole.dll
-D:\BMS\DApps\MasterClient\obj\Debug\MasterClient.njsproj.AssemblyReference.cache
-D:\BMS\DApps\MasterClient\obj\Debug\MasterClient.njsproj.CoreCompileInputs.cache
-D:\BMS\DApps\MasterClient\bin\Microsoft.NodejsTools.WebRole.dll
