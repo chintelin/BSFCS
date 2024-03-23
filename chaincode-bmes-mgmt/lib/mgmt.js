@@ -6,7 +6,7 @@
 
 
 const { Contract } = require('fabric-contract-api');
-const { WorkStation, Transition, WorkPlan, SalesTerm, SalesOrder } = require('./mgmt_util')
+const { WorkStation, Transition, WorkPlan, SalesTerm, SalesTermState, SalesOrder, SalesOrderState } = require('./mgmt_util')
 const { PromisePayloadToObject, BufferToObject } = require('./tool_util');
 
 const DEBUG_MODE = true;
@@ -210,8 +210,10 @@ class BMES_MGMT extends Contract {
         const wp = JSON.parse(wp_json);
         const id = wp.ID;
         let key = ctx.stub.createCompositeKey('bmes', ['workplan', id]);
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));
+        const response = await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));
+        
         console.info(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
+        return response;
     }
 
 
@@ -221,8 +223,12 @@ class BMES_MGMT extends Contract {
         so.AddSalesTerm("1", new SalesTerm("1", 'Product 1000', '1000'));
         so.AddSalesTerm("2", new SalesTerm("2", 'Product 1000', '1000'));
 
-        let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);
+        const key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);        
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
+
+        const key_of_state = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so.ID]);
+        let so_state = new SalesOrderState();
+        await ctx.stub.putState(key_of_state, Buffer.from(JSON.stringify(so_state)));
         console.info(`Sales Order ${so.ID}  data is put into the mgmt legder and its content: ${JSON.stringify(so, null, 4)}`);
     }
 
@@ -280,9 +286,11 @@ class BMES_MGMT extends Contract {
         const so = JSON.parse(so_json);
         const id = so.ID;
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
-        console.info(`Sales Order ${id} ${so} data is put into the mgmt legder`);
+
+        console.info(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
+        let res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));        
         console.info('============= END : UpdateSalesOrder =============');
+        return res;
     }
 
     async UpdateSalesOrderState(ctx, id, str_state_name, str_ISO8601_timestamp) {
@@ -290,20 +298,49 @@ class BMES_MGMT extends Contract {
 
         showMsg(`Input argues: soid=${id}, state=${str_state_name}, time=${str_ISO8601_timestamp}`);
         //generate composite_key
-        let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
+        const key_so = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
+        let key_so_state = ctx.stub.createCompositeKey('bmes', ['salesorderstate', id]);
 
         //find state by the composite_key
-        const soJSON = await ctx.stub.getState(key);
+        let soJSON = await ctx.stub.getState(key_so);
         let obj_so = JSON.parse(soJSON.toString());
+
+        let soStateJSON = await ctx.stub.getState(key_so_state);
+        let obj_so_state = JSON.parse(soStateJSON.toString());
+
         if (str_state_name == "Release" || str_state_name == "Start" || str_state_name == "End") {
             showMsg(`condition= ${str_state_name}`);
             obj_so[str_state_name] = str_ISO8601_timestamp;
+            obj_so_state[str_state_name] = str_ISO8601_timestamp;
         }
         showMsg(`obj_so type: ${typeof (obj_so)} \n  and value: ${JSON.stringify(obj_so, null, 4)}`);
+        showMsg(`obj_so_state type: ${typeof (obj_so_state)} \n  and value: ${JSON.stringify(obj_so_state, null, 4)}`);
 
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(obj_so)));
-        console.info(`Sales Order ${id} state ${str_state_name} is updated with ${str_ISO8601_timestamp}`);
+        console.info(`Sales Order ${id} state ${str_state_name} is being updated with ${str_ISO8601_timestamp}`);
+        let res = await ctx.stub.putState(key_so, Buffer.from(JSON.stringify(obj_so))); 
+
+        if (res.error) {
+            console.error('Failed to update state:', res.error);
+        } else {
+            console.log('State A updated successfully');
+        }
+        res = await ctx.stub.putState(obj_so_state, Buffer.from(JSON.stringify(obj_so_state)));
+        if (res.error) {
+            console.error('Failed to update state:', res.error);
+        } else {
+            console.log('State B updated successfully');
+        }
+
+        const buf_so2 = await ctx.stub.getState(key_so);
+        let obj_so2 = BufferToObject(buf_so2, "UpdateSalesTermState - get so2");
+        showMsg(`obj_so2 type: ${typeof (obj_so2)} \n  and value: ${JSON.stringify(obj_so2, null, 4)}`);
+
+        let soStateJSON2 = await ctx.stub.getState(key_so_state);
+        let obj_so_state2 = JSON.parse(soStateJSON2.toString());
+        showMsg(`obj_so_state2 type: ${typeof (obj_so_state2)} \n  and value: ${JSON.stringify(obj_so_state2, null, 4)}`);
+
         console.info('============= END : UpdateSalesOrderState =============');
+        return res;
     }
 
     async UpdateSalesTermState(ctx, so_id, term_id, str_state_name, str_ISO8601_timestamp) {
@@ -313,7 +350,7 @@ class BMES_MGMT extends Contract {
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
 
         //find state by the composite_key
-        const buf_so = await ctx.stub.getState(key);
+        let buf_so = await ctx.stub.getState(key);
 
         let obj_so = BufferToObject(buf_so, "UpdateSalesTermState - get so");
         if (str_state_name == "Start") {
@@ -328,7 +365,12 @@ class BMES_MGMT extends Contract {
         }
         showMsg(`obj_so type: ${typeof (obj_so)} \n  and value: ${JSON.stringify(obj_so, null, 4)}`);
 
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(obj_so)));
+        const res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(obj_so)));
+
+        const buf_so2 = await ctx.stub.getState(key);
+        let obj_so2 = BufferToObject(buf_so2, "UpdateSalesTermState - get so2");
+        showMsg(`obj_so2 type: ${typeof (obj_so2)} \n  and value: ${JSON.stringify(obj_so2, null, 4)}`);
+        return res;
     }
 
 

@@ -47,14 +47,19 @@ class SalesTerm {
     ID = "";
     ProductName = '';
     RefWorkPlan = '';
-    State = 'Waiting'; //Waiting > Started > Finished
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
     constructor(id, product_name, ref_workplan) {
         this.ID = id;
         this.ProductName = product_name;
         this.RefWorkPlan = ref_workplan;
     }
+    State = 'Waiting'; //Waiting > Started > Finished
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    End = '';
+}
+class SalesTermState {
+    State = 'Waiting'; //Waiting > Started > Finished
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    End = '';
 }
 
 class SalesOrder {
@@ -71,10 +76,17 @@ class SalesOrder {
     }
 }
 
+class SalesOrderState {
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    End = '';
+}
+
 module.exports = {
     WorkStation: WorkStation,
     Transition: Transition,
     WorkPlan: WorkPlan,
     SalesTerm: SalesTerm,
-    SalesOrder: SalesOrder
+    SalesTermState: SalesTermState,
+    SalesOrder: SalesOrder,
+    SalesOrderState: SalesOrderState
 };

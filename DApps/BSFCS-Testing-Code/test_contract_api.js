@@ -38,6 +38,11 @@ const EnableMgmtDocInit = false;
 function prettyJSONString(inputString) {
 	return JSON.stringify(JSON.parse(inputString), null, 2);
 }
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function showTransactionData(transactionData) {
 	const creator = transactionData.actions[0].header.creator;
 	console.log(`    - submitted by: ${creator.mspid}-${creator.id_bytes.toString('hex')}`);
@@ -149,10 +154,26 @@ async function main() {
 			let dt = new Date(Date.now());
 			await contractProd.submitTransaction('StartSaleOrder','1000', dt.toISOString());
 			//console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
+	
 
-			console.log('\n--> Submit Transaction: GetAllObject....');		 
-			result = await contractProd.submitTransaction('GetAllObject');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			console.log('\n--> Submit Transaction: GetSalesOrder after StartSaleOrder....');
+			for (let i = 0; i < 10; i++) {						 
+				result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
+				if(i==9){
+					console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+				}
+				}
+				
+
+				console.log('\n--> Submit MGMT Transaction: GetAllObject....');		 
+				result = await contractMgmt.submitTransaction('GetAllObject');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+	
+
+			return;
+			//console.log('\n--> Submit Transaction: GetAllObject....');		 
+			//result = await contractProd.submitTransaction('GetAllObject');
+			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 			
 			console.log('\n--> Submit Transaction: Checkin @ASRS....');	
 			dt = new Date(Date.now());		
@@ -192,10 +213,11 @@ async function main() {
 			result = await contractProd.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			console.log('\n--> Submit MGMT Transaction: GetAllObject....');		 
-			result = await contractMgmt.submitTransaction('GetAllObject');
+		
+			console.log('\n--> Submit Transaction: GetSalesOrder....');		 
+			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
-
+	
 		} finally {
 			// Disconnect from the gateway when the application is closing
 			// This will close all connections to the network
