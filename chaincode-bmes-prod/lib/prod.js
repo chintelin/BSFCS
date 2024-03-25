@@ -1,7 +1,7 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
-const { WorkOrderId, WorkOrderState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
+const { SalesOrderStateAtProd, WorkOrderId, WorkOrderState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
 const { PromisePayloadToObject, BufferToObject } = require('./tool_util');
 
 const woindex = 'workorder';
@@ -29,48 +29,41 @@ class BMES_PROD extends Contract {
     }
 
     //start up a sales order with its id (string format)
-    async StartSaleOrder(ctx, id_salesOrder_str, str_ISO8601_timestamp) {
+    async StartSaleOrder(ctx, so_id, str_ISO8601_timestamp) {
         console.info('============= START : StartSaleOrder =============');
 
-        //get sales order object by id from mgmt chaincode
-        const buffer_so_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetSalesOrder', id_salesOrder_str], 'channelmgmt');
+        //從bmes-mgmt通道取出so ( get sales order object by id from mgmt chaincode)
+        const buffer_so_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetSalesOrder', so_id], 'channelmgmt');
         if (buffer_so_response.status != 200) {
             return JSON.stringify({ status: buffer_so_response.status });
         }
 
         const obj_so = PromisePayloadToObject(buffer_so_response, "StartSaleOrder-41");
         showMsg(`obj_so type: ${typeof (obj_so)} and value: ${JSON.stringify(obj_so, null, 4)}`); //confirm in docker container if necessary
-        /*   console.info(`Get SalesOrder ${obj_so} ,and content:`);
-           console.info(obj_so);
+        /* 
          example of obj_so
-             {
-             "ID":"1000",
-             "Release":"",
-             "SalesTerms":
+             {  "ID":"1000", "SalesTerms":
                  {
-                     "1":{
+                 "1":{
                      "ID":"1",
                      "ProductName":"Product 1000",
-                     "RefWorkPlan":"1000",
-                     "State":"Waiting",
-                     "Start":"",
-                     "Stop":""},
- 
-                     "2":{
+                     "RefWorkPlan":"1000",}, 
+                 "2":{
                      "ID":"2",
                      "ProductName":"Product 1000",
-                     "RefWorkPlan":"1000",
-                     "State":"Waiting",
-                     "Start":"",
-                     "Stop":""}
+                     "RefWorkPlan":"1000",}
                  },
-                 "Start":"",
-                 "Stop":""
              }
          */
 
-        const str_so_id = obj_so.ID.toString();  // get so_id for creating wip and work terms 
+  
         //Start preparing  wip and transition ids, composed by so_id (ready), term_id, wp_id, tran_id
+
+        //創造SalesOrderStateAtProd，並給予開工時間
+        let so_state = new SalesOrderStateAtProd();
+        so_state.Start = str_ISO8601_timestamp;
+        const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
+        await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so_state)));
 
         //loop to find out salesterm id and its workplan id
         const keys_sales_term = Object.keys(obj_so.SalesTerms);
@@ -86,12 +79,12 @@ class BMES_PROD extends Contract {
 
             showMsg("87");
             // create wip from its key and state, and then commit these to ledger
-            const wo_id = new WorkOrderId(str_so_id, str_term_id, str_wp_id);
+            const wo_id = new WorkOrderId(so_id, str_term_id, str_wp_id);
             const wo_id_partialkey = wo_id.ToArray();
-            showMsg(`wip_id_info type: ${typeof (wo_id_partialkey)} and value: ${JSON.stringify(wo_id_partialkey, null, 4)}`); //confirm in docker container if necessary
+            showMsg(`wo_id_partialkey type: ${typeof (wo_id_partialkey)} and value: ${JSON.stringify(wo_id_partialkey, null, 4)}`); //confirm in docker container if necessary
             const wo_key = ctx.stub.createCompositeKey('bmes', wo_id_partialkey); //generate composite key for wip key
             const wo_state = new WorkOrderState(); // initialized with default condition
-            wo_state.Start = str_ISO8601_timestamp;
+            showMsg(`wo_state type: ${typeof (wo_state)} and value: ${JSON.stringify(wo_state, null, 4)}`); 
             await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state))); // commit wip to prod ledger
 
             // decompose work plan object to find out tranistion info
@@ -107,22 +100,10 @@ class BMES_PROD extends Contract {
                {
                  "ID": "1000",
                  "TransitionList": {
-                   "10": {
-                     "ID": "10",
-                     "WorkStation": "ASRS",
-                     "Function": "2",
-                     "Parameter": "210",
-                     "OK_To": "20",
-                     "NOK_To": "99"
-                   },
-                   "20": {
-                     "ID": "20",
-                     "WorkStation": "Magazine",
-                     "Function": "",
-                     "Parameter": "",
-                     "OK_To": "30",
-                     "NOK_To": "99"
-                   }
+                   "10": { "ID": "10", "WorkStation": "ASRS","Function": "2",
+                     "Parameter": "210", "OK_To": "20","NOK_To": "99"  },
+                   "20": { "ID": "20", "WorkStation": "Magazine", "Function": "",
+                     "Parameter": "", "OK_To": "30",  "NOK_To": "99"   }
                }
             */
 
@@ -142,24 +123,27 @@ class BMES_PROD extends Contract {
 
                 // create work term with its key and state, and then commit these to ledger
                 showMsg("143")
-                const wt_id = new WorkTermId(str_so_id, str_term_id, str_wp_id, str_tran_id);
+                const wt_id = new WorkTermId(so_id, str_term_id, str_wp_id, str_tran_id);
                 const wt_id_info = wt_id.ToArray();
                 const key_wt = ctx.stub.createCompositeKey('bmes', wt_id_info);
                 const wt_state = new WorkTermState();
                 await ctx.stub.putState(key_wt, Buffer.from(JSON.stringify(wt_state)));
 
-            }//end of array_transition loop
-
-                    
+            }//end of array_transition loop                    
         }//end of  obj_so.SalesTerms loop
-
-        await ctx.stub.invokeChaincode('bmes-mgmt', ['UpdateSalesOrderState', id_salesOrder_str, "Start", str_ISO8601_timestamp], 'channelmgmt');
-
         console.info('============= END : StartSaleOrder =============');
     }
 
 
+    async StartSaleOrderStateAtProd(ctx, so_id) {
+        showMsg('============= START : StartSaleOrderStateAtProd =============');
 
+        const so_key = await ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
+        const so_json = await ctx.stub.getState(so_key);
+        showMsg(`so_json type: ${typeof (so_json)} \n  and value: ${JSON.stringify(so_json, null, 4)}`);
+        return so_json.toString();
+        showMsg('============= END : StartSaleOrderStateAtProd =============');
+    }
 
     // when a carrier gets into a mahchine
     async CheckIn(ctx, str_carrier_id, str_workstation_name, str_ISO8601_timestamp) {
@@ -195,51 +179,49 @@ class BMES_PROD extends Contract {
             }
             */
 
-            let list_Wip_NotBindingToCarrier = {};
+            let list_Wo_NotBindingToCarrier = {};
             while (!result.done) {
                 // get value from result
                 const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-                let obj_wipState = Object.assign(new WorkOrderState(null, null), JSON.parse(strValue));
+                let obj_woState = Object.assign(new WorkOrderState(null, null), JSON.parse(strValue));
                 /*   console.info(`obj_wipState type: ${typeof (obj_wipState)} \n  and value: ${JSON.stringify(obj_wipState, null, 4)}`);
                    obj_wipState type: object and value: {"CurrentTransitionID":"10","BindingWithCarrier":null}
                 */
 
-                if (obj_wipState.BindingWithCarrier == null) {
-                    const wip_key = result.value.key;
-                    list_Wip_NotBindingToCarrier[wip_key] = obj_wipState;
+                if (obj_woState.BindingWithCarrier == null) {
+                    const wo_key = result.value.key;
+                    list_Wo_NotBindingToCarrier[wo_key] = obj_woState;
                 }
                 result = await iterator.next();
             }
 
             //if list_Wip_NoCarrier is empty, report a CheckInResponse with 'No' on_duty
-            const keys = Object.keys(list_Wip_NotBindingToCarrier);
+            const keys = Object.keys(list_Wo_NotBindingToCarrier);
             if (keys.length == 0) {
                 return JSON.stringify(new CheckInMessage("No", '', '', 'The check-in carrier is free but no wip can be binded with it'));
             }
 
             //else select the index of the first wo if list_wo_waiting is not empty. 
-            //wip.state += carrier id
-            const binding_wip_key = keys[0];
-            let binding_wip_state = list_Wip_NotBindingToCarrier[binding_wip_key];
-            binding_wip_state.BindingWithCarrier = str_carrier_id;
-            await ctx.stub.putState(binding_wip_key, Buffer.from(JSON.stringify(binding_wip_state)));
-            showMsg(`wip ${binding_wip_key} is binded to carrier ${str_carrier_id}`);
+            //initialize work order state
+            const binding_wo_key = keys[0];
+            let binding_wo_state = list_Wo_NotBindingToCarrier[binding_wo_key];
+            binding_wo_state.BindingWithCarrier = str_carrier_id;
+            binding_wo_state.Start = str_ISO8601_timestamp;
+            binding_wo_state.CurrentTransitionID = "init";
+            await ctx.stub.putState(binding_wo_key, Buffer.from(JSON.stringify(binding_wo_state)));
+            showMsg(`wip ${binding_wo_key} is binded to carrier ${str_carrier_id}`);
 
-            const splited_wip_key = ctx.stub.splitCompositeKey(binding_wip_key);
+            //initialize work terms in the work order
+            const splited_wip_key = ctx.stub.splitCompositeKey(binding_wo_key);
             /* 
               console.info(`splited_wip_key type: ${typeof (splited_wip_key)} \n  and value: ${JSON.stringify(splited_wip_key, null, 4)}`);
             splited_wip_key type: object and value: {
                 "objectType": "bmes",
-                    "attributes": [
-                        "Wip",
-                        "1000",
-                        "1",
-                        "1000"
-                    ]
+                    "attributes": [ "Wip","1000", "1", "1000"   ]
             }*/
 
             let work_term_info = splited_wip_key.attributes
-            work_term_info.push('init');
+            work_term_info.push('init'); 
             work_term_info[0] = "WorkTerm";
 
             console.info(`work_term_info type: ${typeof (work_term_info)} \n  and value: ${JSON.stringify(work_term_info, null, 4)}`);

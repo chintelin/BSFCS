@@ -136,33 +136,32 @@ async function main() {
 			console.log('\n--> Submit Transaction: InitWorkPlanDoc, function creates the initial set of assets on the ledger');
 			await contractMgmt.submitTransaction('InitWorkPlanDoc');
 
-			console.log('\n--> Submit Transaction: GetWorkPlan....');		 
-			result = await contractMgmt.submitTransaction('GetWorkPlan', '1000');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			//console.log('\n--> Submit Transaction: GetWorkPlan....');		 
+			//result = await contractMgmt.submitTransaction('GetWorkPlan', '1000');
+			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
+			let dt = new Date(Date.now());
 			console.log('\n--> Submit Transaction: InitSalesOrderDoc, function creates the initial set of assets on the ledger');
-			await contractMgmt.submitTransaction('InitSalesOrderDoc');
-
-			console.log('\n--> Submit Transaction: GetSalesOrder....');		 
-			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
-
-			return;
+			await contractMgmt.submitTransaction('InitSalesOrderDoc',dt.toISOString());
 	
 			console.log('\n--> Submit Transaction: InitCarrier....');		
 			result = await contractProd.submitTransaction('InitCarrier');	
 			
 			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');	
-			let dt = new Date(Date.now());
+			dt = new Date(Date.now());
 			await contractProd.submitTransaction('StartSaleOrder','1000', dt.toISOString());
 			//console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
 	
 
-			console.log('\n--> Submit Transaction: GetSalesOrder after StartSaleOrder....');				 
+			console.log('\n--> Submit Transaction: GetSalesOrder ....');				 
 			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			
+			console.log('\n--> Submit Transaction: Get SalesOrder State....');				 
+			result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
+			return;
 
 			console.log('\n--> Submit Transaction: Checkin @ASRS....');	
 			dt = new Date(Date.now());		

@@ -6,9 +6,8 @@
 
 
 const { Contract } = require('fabric-contract-api');
-const { WorkStation, Transition, WorkPlan, SalesTerm, SalesOrder} = require('./mgmt_util')
+const { WorkStation, Transition, WorkPlan, SalesTerm, SalesTermState, SalesOrder, SalesOrderState } = require('./mgmt_util')
 const { PromisePayloadToObject, BufferToObject } = require('./tool_util');
-const { WorkOrderId, WorkOrderState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
 
 
 const DEBUG_MODE = true;
@@ -29,9 +28,9 @@ class BMES_MGMT extends Contract {
         ];
         for (const m of ws) {
             let key = ctx.stub.createCompositeKey('bmes', ['workstation', m.Name]);
-            console.info(m.Name + ' key is ' + JSON.stringify(key));
+            showMsg(m.Name + ' key is ' + JSON.stringify(key));
             await ctx.stub.putState(key, Buffer.from(JSON.stringify(m)));
-            console.info(`workstation ${m.Name} data is put into the mgmt legder`);
+            showMsg(`workstation ${m.Name} data is put into the mgmt legder`);
         }
         showMsg('============= END : InitWorkStationDoc ===========');
     }
@@ -74,7 +73,7 @@ class BMES_MGMT extends Contract {
     }
 
     async PostWorkStation(ctx, name, func, parameter, endpoint, protocol) {
-        console.info(`PostWorkStation with ${name}`);
+        showMsg(`PostWorkStation with ${name}`);
         //generate composite_key
         let key = ctx.stub.createCompositeKey('bmes', ['workstation', name]);
         //check WorkStation exist in ledger or not
@@ -93,7 +92,7 @@ class BMES_MGMT extends Contract {
     async GetWorkStation(ctx, name) {
         //generate composite_key
         let key = ctx.stub.createCompositeKey('bmes', ['workstation', name]);
-        //console.info(name+ ' key is '+JSON.stringify(key));
+        //showMsg(name+ ' key is '+JSON.stringify(key));
 
         //find state by the composite_key
         const wsJson = await ctx.stub.getState(key);
@@ -104,7 +103,7 @@ class BMES_MGMT extends Contract {
         }
 
         //show message on channel
-        console.info(name)
+        showMsg(name)
 
         //return information
         return wsJson.toString();
@@ -112,7 +111,7 @@ class BMES_MGMT extends Contract {
 
     async UpdateWorkStation(ctx, name, func, parameter, endpoint, protocol) {
 
-        console.info(`UpdateWorkStation with ${name}`);
+        showMsg(`UpdateWorkStation with ${name}`);
         //generate composite_key
         let key = ctx.stub.createCompositeKey('bmes', ['workstation', name]);
 
@@ -156,7 +155,7 @@ class BMES_MGMT extends Contract {
 
         let key = ctx.stub.createCompositeKey('bmes', ['workplan', workPlan.ID]);
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(workPlan)));
-        console.info(`Work Plan ${workPlan.ID} ${workPlan.Product} data is put into the mgmt legder`);
+        showMsg(`Work Plan ${workPlan.ID} ${workPlan.Product} data is put into the mgmt legder`);
         showMsg('============= END : InitWorkPlanDoc ===========');
     }
 
@@ -210,7 +209,7 @@ class BMES_MGMT extends Contract {
         const id = wp.ID;
         let key = ctx.stub.createCompositeKey('bmes', ['workplan', id]);
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));
-        console.info(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
+        showMsg(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
     }
 
     async UpdateWorkPlan(ctx, wp_json) {
@@ -219,7 +218,7 @@ class BMES_MGMT extends Contract {
         let key = ctx.stub.createCompositeKey('bmes', ['workplan', id]);
         const response = await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));
         
-        console.info(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
+        showMsg(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
         return response;
     }
 
@@ -227,7 +226,7 @@ class BMES_MGMT extends Contract {
 
     //#region SalesOrder
 
-    async InitSalesOrderDoc(ctx) {
+    async InitSalesOrderDoc(ctx, str_ISO8601_timestamp) {
         let so = new SalesOrder('1000');
         so.AddSalesTerm("1", new SalesTerm("1", 'Product 1000', '1000'));
         so.AddSalesTerm("2", new SalesTerm("2", 'Product 1000', '1000'));
@@ -235,14 +234,15 @@ class BMES_MGMT extends Contract {
         const key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);        
         await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
 
-        //const key_of_state = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so.ID]);
-        //let so_state = new SalesOrderState();
-        //await ctx.stub.putState(key_of_state, Buffer.from(JSON.stringify(so_state)));
-        console.info(`Sales Order ${so.ID}  data is put into the mgmt legder and its content: ${JSON.stringify(so, null, 4)}`);
+        const key_of_state = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so.ID]);
+        let so_state = new SalesOrderState();
+        so_state.Release = str_ISO8601_timestamp;
+        await ctx.stub.putState(key_of_state, Buffer.from(JSON.stringify(so_state)));
+        showMsg(`Sales Order ${so.ID}  data is put into the mgmt legder and its content: ${JSON.stringify(so, null, 4)}`);
     }
 
     async GetSalesOrder(ctx, so_id) {
-        console.info(`*****  START: GetSalesOrder *****`)
+        showMsg(`*****  START: GetSalesOrder *****`)
         // prepare a buffer
         //generate composite_key
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
@@ -252,52 +252,57 @@ class BMES_MGMT extends Contract {
 
         //check whether workplan exist or not
         if (!so_json || so_json.length === 0) {
-            throw new Error(`The workplan ${so_id} does not exist`);
+            throw new Error(`The SalesOrder ${so_id} does not exist`);
         }
+        showMsg(`so_json type: ${typeof (so_json)} and value: ${JSON.stringify(so_json, null, 4)}`); 
 
-        let obj_so = JSON.parse(so_json);
-        showMsg(`obj_so type: ${typeof (obj_so)} and value: ${JSON.stringify(obj_so, null, 4)}`); //confirm in docker container if necessary
+        showMsg(`*****  END: GetSalesOrder *****`)
+        //return information
+        return so_json.toString();
+    }
 
-        const keys_sales_term = Object.keys(obj_so.SalesTerms);
-        for (let iter_st = 0; iter_st < keys_sales_term.length; iter_st++) {
-            let str_term_id = keys_sales_term[iter_st]; // it is an id
-            const obj_salesTerms = obj_so.SalesTerms[str_term_id];
-            showMsg(`Sales term id ${str_term_id}: Ref work plan: ${obj_salesTerms.RefWorkPlan}`)
+    async GetSalesOrderState(ctx, so_id) {
+        showMsg(`*****  START: Get SalesOrder State *****`)
+        // prepare a buffer
+        //generate composite_key
+        let key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so_id]);
 
-            const str_wp_id = obj_salesTerms.RefWorkPlan.toString();
-            const buf_wo_state = await ctx.stub.invokeChaincode('bmes-prod', ['GetWorkOrderState', so_id, str_term_id, str_wp_id], 'channelprod');
-            showMsg(`buf_wo_state type: ${typeof (buf_wo_state)} and value: ${JSON.stringify(buf_wo_state, null, 4)}`); //confirm in docker container if necessary
+        //find state by the composite_key
+        let buf_so_state = await ctx.stub.getState(key);
+        showMsg(`so_state_json type: ${typeof (buf_so_state)} and value: ${JSON.stringify(buf_so_state, null, 4)}`);
+        let so_state_json = BufferToObject(buf_so_state, "GetSalesOrderState: buf_so_state > so_state_json")
+        //check whether workplan exist or not
+        if (!so_state_json || so_state_json.length === 0) {
+            throw new Error(`The State of Sales Order ${so_id} does not exist`);
+        }
+        showMsg(`so_state_json type: ${typeof (so_state_json)} and value: ${JSON.stringify(so_state_json, null, 4)}`);
 
-            const obj_wo_state = PromisePayloadToObject(buf_wo_state, "271");
-            showMsg(`obj_wo_state type: ${typeof (obj_wo_state)} and value: ${JSON.stringify(obj_wo_state, null, 4)}`); //confirm in docker container if necessary
+        // get recorded state in prod
+        const buf_so_state_record_at_prod = await ctx.stub.invokeChaincode('bmes-prod', ['StartSaleOrderStateAtProd', so_id], 'channelprod');
+        showMsg(`buf_so_state_record_at_prod type: ${typeof (buf_so_state_record_at_prod)} and value: ${JSON.stringify(buf_so_state_record_at_prod, null, 4)}`);
 
-            let so_term_state = "";
-            //update so state
-            obj_so.SalesTerms[str_term_id].Start = obj_wo_state.Start;
-            obj_so.SalesTerms[str_term_id].End = obj_wo_state.End;
+        const so_state_record_at_prod = PromisePayloadToObject(buf_so_state_record_at_prod, "invokeChaincode >GetWorkOrderState")
+        showMsg(`so_state_record_at_prod type: ${typeof (so_state_record_at_prod)} and value: ${JSON.stringify(so_state_record_at_prod, null, 4)}`);
 
-            if (obj_wo_state.End != "") {
-                obj_so.SalesTerms[str_term_id].State = "Finished";
-                if (obj_wo_state.Start != "") {
-                    obj_so.SalesTerms[str_term_id].State = "Started";     £¶               
-                }
-                else {
-                    obj_so.SalesTerms[str_term_id].State = "Waiting";
-                }
-            }
-            showMsg(`obj_so type: ${typeof (obj_so)} and value: ${JSON.stringify(obj_so, null, 4)}`); //confirm in docker container if necessary
 
-        } //end sales term
+        // sync sale order state
+        if (so_state_json.Start != so_state_record_at_prod.Start) {
+            so_state_json.Start = so_state_record_at_prod.Start
+        }
+        if (so_state_json.End != so_state_record_at_prod.End) {
+            so_state_json.End = so_state_record_at_prod.End
+        }
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(so_state_json)));
 
-        so_json = JSON.stringify(obj_so);
+        let so_json = JSON.stringify(so_state_json);
 
-        console.info(`*****  END: GetSalesOrder *****`)
+        showMsg(`*****  END: Get SalesOrder State *****`)
         //return information
         return so_json.toString();
     }
 
     async GetAllOrder(ctx) {
-        console.info('============= START : GetAllOrder =============');
+        showMsg('============= START : GetAllOrder =============');
         // prepare a buffer
         const allResults = [];
 
@@ -323,28 +328,28 @@ class BMES_MGMT extends Contract {
             allResults.push(Value);
             result = await iterator.next();
         }
-        console.info(`Finish GetAllOrder, starting merge production data`)
+        showMsg(`Finish GetAllOrder, starting merge production data`)
 
-
-
-        console.info('============= END : GetAllOrder =============');
+        showMsg('============= END : GetAllOrder =============');
         return JSON.stringify(allResults);
     }
 
     async UpdateSalesOrder(ctx, so_json) {
-        console.info('============= START : UpdateSalesOrder =============');
+        showMsg('============= START : UpdateSalesOrder =============');
         const so = JSON.parse(so_json);
         const id = so.ID;
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
 
-        console.info(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
+        showMsg(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
         let res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));        
-        console.info('============= END : UpdateSalesOrder =============');
+        showMsg('============= END : UpdateSalesOrder =============');
         return res;
     }
+
+
     /*
     async UpdateSalesOrderState(ctx, id, str_state_name, str_ISO8601_timestamp) {
-        console.info('============= START : UpdateSalesOrderState =============');
+        showMsg('============= START : UpdateSalesOrderState =============');
 
         showMsg(`Input argues: soid=${id}, state=${str_state_name}, time=${str_ISO8601_timestamp}`);
         //generate composite_key
@@ -366,7 +371,7 @@ class BMES_MGMT extends Contract {
         showMsg(`obj_so type: ${typeof (obj_so)} \n  and value: ${JSON.stringify(obj_so, null, 4)}`);
         showMsg(`obj_so_state type: ${typeof (obj_so_state)} \n  and value: ${JSON.stringify(obj_so_state, null, 4)}`);
 
-        console.info(`Sales Order ${id} state ${str_state_name} is being updated with ${str_ISO8601_timestamp}`);
+        showMsg(`Sales Order ${id} state ${str_state_name} is being updated with ${str_ISO8601_timestamp}`);
         let res = await ctx.stub.putState(key_so, Buffer.from(JSON.stringify(obj_so))); 
 
         if (res.error) {
@@ -389,12 +394,12 @@ class BMES_MGMT extends Contract {
         let obj_so_state2 = JSON.parse(soStateJSON2.toString());
         showMsg(`obj_so_state2 type: ${typeof (obj_so_state2)} \n  and value: ${JSON.stringify(obj_so_state2, null, 4)}`);
 
-        console.info('============= END : UpdateSalesOrderState =============');
+        showMsg('============= END : UpdateSalesOrderState =============');
         return res;
     }
 
     async UpdateSalesTermState(ctx, so_id, term_id, str_state_name, str_ISO8601_timestamp) {
-        console.info('============= START : UpdateSalesTermState =============');
+        showMsg('============= START : UpdateSalesTermState =============');
         showMsg(`Input argues: soid=${so_id}, termid=${term_id} state=${str_state_name}, time=${str_ISO8601_timestamp}`);
         //generate composite_key
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
@@ -429,32 +434,32 @@ class BMES_MGMT extends Contract {
 
 
     async getHistory(ctx, id) {
-        console.info('============= START : Query History ===========');
+        showMsg('============= START : Query History ===========');
         let iterator = await ctx.stub.getHistoryForKey(id);
 
         let result = [];
         let res = await iterator.next();
-        // console.info(res)
-        // console.info('res=======>res.value')
-        // console.info(res.value)
-        // console.info('res.value=======>res.value.value')
-        // console.info(res.value.value)
-        // console.info(res.value.timestamp)
-        // console.info(res.value.timestamp.toString())
-        // console.info(res.value.timestamp.seconds)
-        // console.info(res.value.timestamp.seconds.low)
+        // showMsg(res)
+        // showMsg('res=======>res.value')
+        // showMsg(res.value)
+        // showMsg('res.value=======>res.value.value')
+        // showMsg(res.value.value)
+        // showMsg(res.value.timestamp)
+        // showMsg(res.value.timestamp.toString())
+        // showMsg(res.value.timestamp.seconds)
+        // showMsg(res.value.timestamp.seconds.low)
         while (!res.done) {
             if (res.value) {
-                console.info(`found state update with value: ${res.value.value.toString('utf8')}`);
+                showMsg(`found state update with value: ${res.value.value.toString('utf8')}`);
                 const obj = JSON.parse(res.value.value.toString('utf8'));
                 let date = new Date(res.value.timestamp.seconds.low)
-                console.info(date)
+                showMsg(date)
                 result.push(obj);
             }
             res = await iterator.next();
         }
         await iterator.close();
-        console.info('============= END : Query History ===========');
+        showMsg('============= END : Query History ===========');
         return result;
     }
 

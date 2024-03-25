@@ -1,6 +1,13 @@
 'use strict';
 
-//  WorkOrder kye = ctx.stub.createCompositeKey('bmes', WorkOrderId.ToArray()); 
+// key = createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
+class SalesOrderStateAtProd {
+    Start = ''; 
+    End = '';
+}
+
+
+// key = ctx.stub.createCompositeKey('bmes', WorkOrderId.ToArray()); 
 class WorkOrderId {
     SO_id = "";
     Term_id = "";
@@ -17,9 +24,9 @@ class WorkOrderId {
 }
 
 class WorkOrderState {
-    CurrentTransitionID = "10"; //first step is 10 in default
+    CurrentTransitionID = "0"; //first step is 10 in default
     BindingWithCarrier = null;
-    Start = ""; //toLocaleTimeString() 
+    Start = "";  
     End = "";
     Tag = "";
 }
@@ -104,3 +111,4 @@ exports.WorkTermState = WorkTermState;
 exports.ProductionMessage = ProductionMessage;
 exports.CheckInMessage = CheckInMessage;
 exports.CheckOutMessage = CheckOutMessage;
+exports.SalesOrderStateAtProd = SalesOrderStateAtProd;

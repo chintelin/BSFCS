@@ -52,27 +52,28 @@ class SalesTerm {
     ID = "";
     ProductName = '';
     RefWorkPlan = '';
-    State = 'Waiting'; //Waiting > Started > Finished
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
     constructor(id, product_name, ref_workplan) {
         this.ID = id;
         this.ProductName = product_name;
         this.RefWorkPlan = ref_workplan;
+    }
+}
+
+class SalesTermState {
+    State = ''; //Waiting > Started > Finished
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    End = '';
+    constructor() {
         this.State = 'Waiting';
         this.Start = '';
         this.End = '';
     }
-
 }
 
 
 class SalesOrder {
-    ID = ""
-    Release = ""
+    ID = "";
     SalesTerms = {}; // key=id, value = salesterm
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
     constructor(id) {
         this.ID = id;
     }
@@ -81,11 +82,18 @@ class SalesOrder {
     }
 }
 
+class SalesOrderState {
+    Release = "";
+    Start = ''; 
+    End = '';
+}
 
 module.exports = {
     WorkStation: WorkStation,
     Transition: Transition,
     WorkPlan: WorkPlan,
     SalesTerm: SalesTerm,
+    SalesTermState: SalesTermState,
     SalesOrder: SalesOrder,
+    SalesOrderState: SalesOrderState
 };
