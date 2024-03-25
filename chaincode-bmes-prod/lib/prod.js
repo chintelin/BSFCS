@@ -1,7 +1,7 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
-const { WipId, WipState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
+const { WorkOrderId, WorkOrderState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
 const { PromisePayloadToObject, BufferToObject } = require('./tool_util');
 
 const woindex = 'workorder';
@@ -86,12 +86,13 @@ class BMES_PROD extends Contract {
 
             showMsg("87");
             // create wip from its key and state, and then commit these to ledger
-            const wip_id = new WipId(str_so_id, str_term_id, str_wp_id);
-            const wip_id_info = wip_id.ToArray();
-            showMsg(`wip_id_info type: ${typeof (wip_id_info)} and value: ${JSON.stringify(wip_id_info, null, 4)}`); //confirm in docker container if necessary
-            const key_wip = ctx.stub.createCompositeKey('bmes', wip_id_info); //generate composite key for wip key
-            const state_wip = new WipState(); // initialized with default condition
-            await ctx.stub.putState(key_wip, Buffer.from(JSON.stringify(state_wip))); // commit wip to prod ledger
+            const wo_id = new WorkOrderId(str_so_id, str_term_id, str_wp_id);
+            const wo_id_partialkey = wo_id.ToArray();
+            showMsg(`wip_id_info type: ${typeof (wo_id_partialkey)} and value: ${JSON.stringify(wo_id_partialkey, null, 4)}`); //confirm in docker container if necessary
+            const wo_key = ctx.stub.createCompositeKey('bmes', wo_id_partialkey); //generate composite key for wip key
+            const wo_state = new WorkOrderState(); // initialized with default condition
+            wo_state.Start = str_ISO8601_timestamp;
+            await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state))); // commit wip to prod ledger
 
             // decompose work plan object to find out tranistion info
             showMsg("97");
@@ -198,7 +199,7 @@ class BMES_PROD extends Contract {
             while (!result.done) {
                 // get value from result
                 const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-                let obj_wipState = Object.assign(new WipState(null, null), JSON.parse(strValue));
+                let obj_wipState = Object.assign(new WorkOrderState(null, null), JSON.parse(strValue));
                 /*   console.info(`obj_wipState type: ${typeof (obj_wipState)} \n  and value: ${JSON.stringify(obj_wipState, null, 4)}`);
                    obj_wipState type: object and value: {"CurrentTransitionID":"10","BindingWithCarrier":null}
                 */
@@ -238,7 +239,7 @@ class BMES_PROD extends Contract {
             }*/
 
             let work_term_info = splited_wip_key.attributes
-            work_term_info.push('10');
+            work_term_info.push('init');
             work_term_info[0] = "WorkTerm";
 
             console.info(`work_term_info type: ${typeof (work_term_info)} \n  and value: ${JSON.stringify(work_term_info, null, 4)}`);
@@ -413,7 +414,7 @@ class BMES_PROD extends Contract {
         }
 
         // update wip state
-        const wip_id = new WipId(nextWorkTermId.SO_id, nextWorkTermId.Term_id, nextWorkTermId.WP_id);
+        const wip_id = new WorkOrderId(nextWorkTermId.SO_id, nextWorkTermId.Term_id, nextWorkTermId.WP_id);
         const wip_id_info = wip_id.ToArray();
         const key_wip = ctx.stub.createCompositeKey('bmes', wip_id_info); //generate composite key for wip key
         let buf_state_wip = await ctx.stub.getState(key_wip);
@@ -433,8 +434,30 @@ class BMES_PROD extends Contract {
         return msg;
     }
 
+    async GetWorkOrderState(ctx, so, st, wp) {
+        console.info('============= START : GetWorkOrderState =============');
+        const id = new WorkOrderId(so, st, wp);
+        const partialkey = id.ToArray();
+        const key = ctx.stub.createCompositeKey('bmes', partialkey);
+        let res = await ctx.stub.getState(key);
+        showMsg(`res type: ${typeof (res)} and value: ${JSON.stringify(res, null, 4)}`); //confirm in docker container if necessary
 
+        const res_obj = BufferToObject(res, "GetWorkOrderState");
+        showMsg(`res type: ${typeof (res_obj)} and value: ${JSON.stringify(res_obj, null, 4)}`); //confirm in docker container if necessary
 
+   
+        console.info('============= END : GetWorkOrderState =============');
+    }
+
+    async GetWorkTermState(ctx, so, st, wp, wt) {
+        console.info('============= START : GetWorkTermState =============');
+        const id = new WorkTermId(so, st, wp, wt);
+        const partialkey = id.ToArray();
+        const key = ctx.stub.createCompositeKey('bmes', partialkey);
+        let res = await ctx.stub.getState(key);
+        return BufferToObject(res, "GetWorkTermState");
+        console.info('============= END : GetWorkTermState =============');
+    }
 
     async TestClientCheck(ctx) {
         const proposalCreator = await ctx.stub.getCreator();

@@ -1,6 +1,7 @@
 'use strict';
 
-class WipId {
+//  WorkOrder kye = ctx.stub.createCompositeKey('bmes', WorkOrderId.ToArray()); 
+class WorkOrderId {
     SO_id = "";
     Term_id = "";
     WP_id = ""
@@ -11,20 +12,26 @@ class WipId {
     }
 
     ToArray = function () {
-        return ['Wip', this.SO_id, this.Term_id, this.WP_id];
+        return ['workorder', this.SO_id, this.Term_id, this.WP_id];
     }
 }
 
-class WipState {
+class WorkOrderState {
     CurrentTransitionID = "10"; //first step is 10 in default
     BindingWithCarrier = null;
+    Start = ""; //toLocaleTimeString() 
+    End = "";
+    Tag = "";
 }
 
+// Carrier key = ctx.stub.createCompositeKey('bmes', ['carrier', carrier_id]);
 class CarrierState {
     Status = 'free'; //  free/busy
     CurrentWorkTermId = null; // record the current work term with Wip Id
+
 }
 
+// WorkTermId key = ctx.stub.createCompositeKey('bmes', WorkTermId.ToArray());
 class WorkTermId {
     SO_id = "";
     Term_id = "";
@@ -38,7 +45,7 @@ class WorkTermId {
         this.Tran_id = tran_id;
     }
     ToArray = function () {
-        return ['WorkTerm', this.SO_id, this.Term_id, this.WP_id, this.Tran_id];
+        return ['workterm', this.SO_id, this.Term_id, this.WP_id, this.Tran_id];
     }
 }
 
@@ -89,8 +96,8 @@ class CheckOutMessage {
     }
 }
 
-exports.WipId = WipId;
-exports.WipState = WipState;
+exports.WorkOrderId = WorkOrderId;
+exports.WorkOrderState = WorkOrderState;
 exports.CarrierState = CarrierState;
 exports.WorkTermId = WorkTermId;
 exports.WorkTermState = WorkTermState;

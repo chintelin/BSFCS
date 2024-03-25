@@ -15,13 +15,18 @@ class WorkStation {
     }
 }
 
+
+
 class Transition {
-    ID = '0';
+    ID = '0';  //normally is number, but "init" means the work is done!
     WorkStation = '';
     Function = '';
     Parameter = ''; //seperate by comma ','
-    OK_To = '0';
-    NOK_To = '0';
+    OK_To = '0';  //normally is number, but "done" means the work is done!
+    NOK_To = '0'; //normally is number, but "failed" means the work is failed!
+
+    // ID, OK_To, and NOK_To are should be numbers
+
     constructor(id, ws, func, par, ok, nok) {
         this.ID = id;
         this.WorkStation = ws;
@@ -47,20 +52,20 @@ class SalesTerm {
     ID = "";
     ProductName = '';
     RefWorkPlan = '';
+    State = 'Waiting'; //Waiting > Started > Finished
+    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    End = '';
     constructor(id, product_name, ref_workplan) {
         this.ID = id;
         this.ProductName = product_name;
         this.RefWorkPlan = ref_workplan;
+        this.State = 'Waiting';
+        this.Start = '';
+        this.End = '';
     }
-    State = 'Waiting'; //Waiting > Started > Finished
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
+
 }
-class SalesTermState {
-    State = 'Waiting'; //Waiting > Started > Finished
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
-}
+
 
 class SalesOrder {
     ID = ""
@@ -76,17 +81,11 @@ class SalesOrder {
     }
 }
 
-class SalesOrderState {
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
-    End = '';
-}
 
 module.exports = {
     WorkStation: WorkStation,
     Transition: Transition,
     WorkPlan: WorkPlan,
     SalesTerm: SalesTerm,
-    SalesTermState: SalesTermState,
     SalesOrder: SalesOrder,
-    SalesOrderState: SalesOrderState
 };
