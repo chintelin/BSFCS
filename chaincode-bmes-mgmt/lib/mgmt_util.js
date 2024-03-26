@@ -1,5 +1,7 @@
 'use strict';
 
+// Time format: ISO8601
+
 class WorkStation {
     Name = "";
     Function = "Idle";
@@ -61,7 +63,7 @@ class SalesTerm {
 
 class SalesTermState {
     State = ''; //Waiting > Started > Finished
-    Start = ''; //Time format : YYYY-MM-DD-hh-mm-ss
+    Start = ''; //
     End = '';
     constructor() {
         this.State = 'Waiting';

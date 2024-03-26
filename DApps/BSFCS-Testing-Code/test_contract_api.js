@@ -161,8 +161,6 @@ async function main() {
 			result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			return;
-
 			console.log('\n--> Submit Transaction: Checkin @ASRS....');	
 			dt = new Date(Date.now());		
 			let checkInResult = await contractProd.submitTransaction('CheckIn','1',"ASRS", dt.toISOString());
