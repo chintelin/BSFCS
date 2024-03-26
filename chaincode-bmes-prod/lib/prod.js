@@ -341,7 +341,7 @@ class BMES_PROD extends Contract {
         showMsg('============= END : ReportTransitionEnd =============');
     }
 
-    async ChectOut(ctx, str_carrier_id, str_machine_name) {
+    async ChectOut(ctx, str_carrier_id, str_machine_name, str_ISO8601_timestamp) {
         showMsg('============= START : ChectOut =============');
 
         //¨ú±o carrier state
@@ -389,6 +389,14 @@ class BMES_PROD extends Contract {
             obj_state_carrier.CurrentWorkTermId = null;
             obj_state_carrier.Status = 'free'
             await ctx.stub.putState(key_carrier, JSON.stringify(obj_state_carrier));
+
+            //update salesorderstateatprod
+            const so_state_at_prod_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", curWorkTermId.SO_id]);
+            let buf_so_state_at_prod = await ctx.stub.getState(so_state_at_prod_key);
+            let so_state_at_prod = BufferToObject(buf_so_state_at_prod, "ChectOut-395");
+
+            so_state_at_prod.End = str_ISO8601_timestamp;
+            await ctx.stub.putState(so_state_at_prod_key, Buffer.from(JSON.stringify(so_state_at_prod)));
 
             msg = new CheckOutMessage("", `The transition and work order is done.`);
         }

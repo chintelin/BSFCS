@@ -103,7 +103,7 @@ async function main() {
 
 			//  --- Chaincode Event --- INIT ----
 			let listenner = async (event) => {
-							// The payload of the chaincode event is the value place there by the
+					// The payload of the chaincode event is the value place there by the
 					// chaincode. Notice it is a byte data and the application will have
 					// to know how to deserialize.
 					// In this case we know that the chaincode will always place the asset
@@ -126,14 +126,14 @@ async function main() {
 			
 			// if(EnableMgmtDocInit)//set true to test machine doc
 			// {
-			console.log('\n--> Submit Transaction: InitMachineDoc, function creates the initial set of assets on the ledger');
+			console.log('\n--> Submit Transaction: InitWorkStationDoc...');
 			await contractMgmt.submitTransaction('InitWorkStationDoc');
-			console.log('\n-------> Submit Transaction: GetAllMachine....');
+			console.log('\n-------> Submit Transaction: InitWorkStationDoc....');
 
 			//result = await contractMgmt.evaluateTransaction('GetAllMachine');
 			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			console.log('\n--> Submit Transaction: InitWorkPlanDoc, function creates the initial set of assets on the ledger');
+			console.log('\n--> Submit Transaction: InitWorkPlanDoc...');
 			await contractMgmt.submitTransaction('InitWorkPlanDoc');
 
 			//console.log('\n--> Submit Transaction: GetWorkPlan....');		 
@@ -141,7 +141,7 @@ async function main() {
 			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
 			let dt = new Date(Date.now());
-			console.log('\n--> Submit Transaction: InitSalesOrderDoc, function creates the initial set of assets on the ledger');
+			console.log('\n--> Submit Transaction: InitSalesOrderDoc...');
 			await contractMgmt.submitTransaction('InitSalesOrderDoc',dt.toISOString());
 	
 			console.log('\n--> Submit Transaction: InitCarrier....');		
@@ -153,11 +153,11 @@ async function main() {
 			//console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
 	
 
-			console.log('\n--> Submit Transaction: GetSalesOrder ....');				 
+			console.log('\n--> Submit Transaction: GetSalesOrder with id=1000. ....');				 
 			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			console.log('\n--> Submit Transaction: Get SalesOrder State....');				 
+			console.log('\n--> Submit Transaction: Get SalesOrder State with id=1000.....');				 
 			result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
@@ -167,10 +167,6 @@ async function main() {
 			let obj_checkInResult_ASRS = JSON.parse(checkInResult);
 			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
 
-			console.log('\n--> Submit Transaction: GetSalesOrder after StartSaleOrder....');				 
-			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
-			
 			if(obj_checkInResult_ASRS.IsOnDuty == "Yes")
 			{
 				let func = obj_checkInResult_ASRS.Function;
@@ -181,38 +177,158 @@ async function main() {
 				
 				result = await contractProd.submitTransaction('ReportTransitionStart','1',"ASRS", dt.toISOString());
 
-				console.log('\n--> Submit Transaction: GetSalesOrder after StartSaleOrder....');				 
-				result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ReportTransitionStart....');				 
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
 				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
 				let runTransition = async (function_name,parameterlist) => {
 					new Promise((resolve) => setTimeout(resolve, 3000));//replace this segment with machine control function
 				}
-
 				let result_after_transition = await runTransition();
+
 				dt = new Date(Date.now());	
 				console.log(`${GREEN} ASRS is complete the transition using function:${func} and parameter:${par} at ${dt.toISOString()}`);
 				console.log('\n--> Submit Transaction: ReportTransitionEnd @ASRS....');		
-				result = await contractProd.submitTransaction('ReportTransitionEnd','1',"ASRS", dt.toISOString());
-
-				console.log('\n--> Submit Transaction: GetSalesOrder after StartSaleOrder....');				 
-				result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
-				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+				result = await contractProd.submitTransaction('ReportTransitionEnd', '1', "ASRS", dt.toISOString());
 
 				console.log(`${GREEN} ASRS is executing "check out" process `);
-				console.log('\n--> Submit Transaction: ChectOut @ASRS....');		
-				result = await contractProd.submitTransaction('ChectOut','1',"ASRS");
+				console.log('\n--> Submit Transaction: ChectOut @ASRS....');	
+				dt = new Date(Date.now());		
+				result = await contractProd.submitTransaction('ChectOut','1',"ASRS", dt.toISOString());
 				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ASRS work done....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 			}
-			
+
+			console.log('\n--> Submit Transaction: Checkin @Magazine....');
+			dt = new Date(Date.now());
+			 checkInResult = await contractProd.submitTransaction('CheckIn', '1', "Magazine", dt.toISOString());
+			let obj_checkInResult_Magazine = JSON.parse(checkInResult);
+			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
+
+			if (obj_checkInResult_Magazine.IsOnDuty == "Yes") {
+				let func = obj_checkInResult_Magazine.Function;
+				let par = obj_checkInResult_Magazine.Parameter;
+				dt = new Date(Date.now());
+				console.log(`${GREEN} Magazine is starting the transition using function:${func} and parameter:${par} at ${dt.toISOString()} `);
+				console.log('\n--> Submit Transaction: ReportTransitionStart @Magazine....');
+
+				result = await contractProd.submitTransaction('ReportTransitionStart', '1', "Magazine", dt.toISOString());
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ReportTransitionStart....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
+				let runTransition = async (function_name, parameterlist) => {
+					new Promise((resolve) => setTimeout(resolve, 3000));//replace this segment with machine control function
+				}
+				let result_after_transition = await runTransition();
+
+				dt = new Date(Date.now());
+				console.log(`${GREEN} Magazine is complete the transition using function:${func} and parameter:${par} at ${dt.toISOString()}`);
+				console.log('\n--> Submit Transaction: ReportTransitionEnd @Magazine....');
+				result = await contractProd.submitTransaction('ReportTransitionEnd', '1', "Magazine", dt.toISOString());
+
+				console.log(`${GREEN} Magazine is executing "check out" process `);
+				console.log('\n--> Submit Transaction: ChectOut @Magazine....');
+				dt = new Date(Date.now());
+				result = await contractProd.submitTransaction('ChectOut', '1', "Magazine", dt.toISOString());
+				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after Magazine work done....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			}
+
+
+			console.log('\n--> Submit Transaction: Checkin @Press....');
+			dt = new Date(Date.now());
+			 checkInResult = await contractProd.submitTransaction('CheckIn', '1', "Press", dt.toISOString());
+			let obj_checkInResult_Press = JSON.parse(checkInResult);
+			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
+
+			if (obj_checkInResult_Press.IsOnDuty == "Yes") {
+				let func = obj_checkInResult_Press.Function;
+				let par = obj_checkInResult_Press.Parameter;
+				dt = new Date(Date.now());
+				console.log(`${GREEN} Press is starting the transition using function:${func} and parameter:${par} at ${dt.toISOString()} `);
+				console.log('\n--> Submit Transaction: ReportTransitionStart @Press....');
+
+				result = await contractProd.submitTransaction('ReportTransitionStart', '1', "Press", dt.toISOString());
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ReportTransitionStart....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
+				let runTransition = async (function_name, parameterlist) => {
+					new Promise((resolve) => setTimeout(resolve, 3000));//replace this segment with machine control function
+				}
+				let result_after_transition = await runTransition();
+
+				dt = new Date(Date.now());
+				console.log(`${GREEN} Press is complete the transition using function:${func} and parameter:${par} at ${dt.toISOString()}`);
+				console.log('\n--> Submit Transaction: ReportTransitionEnd @Press....');
+				result = await contractProd.submitTransaction('ReportTransitionEnd', '1', "Press", dt.toISOString());
+
+				console.log(`${GREEN} Press is executing "check out" process `);
+				console.log('\n--> Submit Transaction: ChectOut @Press....');
+				dt = new Date(Date.now());
+				result = await contractProd.submitTransaction('ChectOut', '1', "Press", dt.toISOString());
+				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after Press work done....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			}
+
+			console.log('\n--> Submit Transaction: Checkin @ASRS....');
+			dt = new Date(Date.now());
+			checkInResult = await contractProd.submitTransaction('CheckIn', '1', "ASRS", dt.toISOString());
+			let obj_checkInResult2_ASRS = JSON.parse(checkInResult);
+			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
+
+			if (obj_checkInResult2_ASRS.IsOnDuty == "Yes") {
+				let func = obj_checkInResult2_ASRS.Function;
+				let par = obj_checkInResult2_ASRS.Parameter;
+				dt = new Date(Date.now());
+				console.log(`${GREEN} ASRS is starting the transition using function:${func} and parameter:${par} at ${dt.toISOString()} `);
+				console.log('\n--> Submit Transaction: ReportTransitionStart @ASRS....');
+
+				result = await contractProd.submitTransaction('ReportTransitionStart', '1', "ASRS", dt.toISOString());
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ReportTransitionStart....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
+				let runTransition = async (function_name, parameterlist) => {
+					new Promise((resolve) => setTimeout(resolve, 3000));//replace this segment with machine control function
+				}
+				let result_after_transition = await runTransition();
+
+				dt = new Date(Date.now());
+				console.log(`${GREEN} ASRS is complete the transition using function:${func} and parameter:${par} at ${dt.toISOString()}`);
+				console.log('\n--> Submit Transaction: ReportTransitionEnd @ASRS....');
+				result = await contractProd.submitTransaction('ReportTransitionEnd', '1', "ASRS", dt.toISOString());
+
+				console.log(`${GREEN} ASRS is executing "check out" process `);
+				console.log('\n--> Submit Transaction: ChectOut @ASRS....');
+				dt = new Date(Date.now());
+				result = await contractProd.submitTransaction('ChectOut', '1', "ASRS", dt.toISOString());
+				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
+
+				console.log('\n--> Submit Transaction: GetSalesOrderState after ASRS work done....');
+				result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+			}
 
 			console.log('\n--> Submit PROD Transaction: GetAllObject....');		 
 			result = await contractProd.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-		
-			console.log('\n--> Submit Transaction: GetSalesOrder....');		 
-			result = await contractMgmt.submitTransaction('GetSalesOrder', '1000');
+			console.log('\n--> Submit PROD Transaction: GetAllObject....');		 
+			result = await contractMgmt.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 	
 		} finally {
