@@ -9,6 +9,7 @@
 const { Gateway, Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
+const fs = require('fs');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('./../lib/CAUtil.js');
 const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('./../lib/AppUtil.js');
 const { listenerCount } = require('process');
@@ -20,6 +21,7 @@ const chaincodeProdName = 'bmes-prod';
 const mspOrg1 = 'Org1MSP';
 const mspOrg2 = 'Org2MSP';
 
+const workDirPath = __dirname;
 const ext_mgmt_id = Math.floor(Math.random() * 100000);
 const ext_prod_id = Math.floor(Math.random() * 100000 + 100000);
 const walletMgmtPath = path.join(__dirname,'wallet_' + ext_mgmt_id );
@@ -327,7 +329,7 @@ async function main() {
 			result = await contractProd.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			console.log('\n--> Submit PROD Transaction: GetAllObject....');		 
+			console.log('\n--> Submit Mgmt Transaction: GetAllObject....');		 
 			result = await contractMgmt.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 	
@@ -341,6 +343,36 @@ async function main() {
 		console.error(`******** FAILED to run the application: ${error}`);
 	}
 }
+
+function deleteWalletFolders(dirPath) {
+    if (fs.existsSync(dirPath)) {
+        fs.readdirSync(dirPath).forEach((file) => {
+            const curPath = path.join(dirPath, file);
+            if (fs.lstatSync(curPath).isDirectory() && file.startsWith('wallet')) { // 如果是資料夾且名稱符合 "wallet" 開頭
+                deleteFolder(curPath);
+            }
+        });
+    }
+}
+// 刪除資料夾的函數
+function deleteFolder(folderPath) {
+    if (fs.existsSync(folderPath)) {
+        fs.readdirSync(folderPath).forEach((file, index) => {
+            const curPath = path.join(folderPath, file);
+            if (fs.lstatSync(curPath).isDirectory()) { // 如果是資料夾，遞迴刪除
+                deleteFolder(curPath);
+            } else { // 如果是檔案，直接刪除
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(folderPath);
+    }
+}
+
+// 程式碼執行結束後刪除名稱符合 "wallet" 開頭的資料夾
+process.on('exit', () => {
+    deleteWalletFolders(workDirPath);
+});
 
 main();
 

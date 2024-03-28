@@ -50,29 +50,8 @@ class WorkPlan {
     }
 }
 
-class SalesTerm {
-    ID = "";
-    ProductName = '';
-    RefWorkPlan = '';
-    constructor(id, product_name, ref_workplan) {
-        this.ID = id;
-        this.ProductName = product_name;
-        this.RefWorkPlan = ref_workplan;
-    }
-}
 
-class SalesTermState {
-    State = ''; //Waiting > Started > Finished
-    Start = ''; //
-    End = '';
-    constructor() {
-        this.State = 'Waiting';
-        this.Start = '';
-        this.End = '';
-    }
-}
-
-
+//CompositeKey('bmes', ['salesorder', so.ID]);
 class SalesOrder {
     ID = "";
     SalesTerms = {}; // key=id, value = salesterm
@@ -84,11 +63,63 @@ class SalesOrder {
     }
 }
 
+
+//CompositeKey('bmes', ['salesorderstate', so.ID]);
 class SalesOrderState {
+    Condition = "Released"; //Editing (not used) > Released > Started > Pending > End
     Release = "";
-    Start = ''; 
-    End = '';
+    Start = "";
+    End = "";
 }
+
+//message to apps
+class SalesOrderStateMessage {
+    ID = "";
+    Condition = ""; //Editing (not used) > Released > Started > Pending > End
+    Release = "";
+    Start = "";
+    End = "";
+    SalesTerms = {} //SalesTermStateMessage
+    AddSalesTerm(id, salesTermStateMessage) {
+        this.SalesTerms[id] = salesTermStateMessage;
+    }
+}
+
+class SalesTerm {
+    ID = "";
+    ProductName = '';
+    RefWorkPlan = '';
+    constructor(id, product_name, ref_workplan) {
+        this.ID = id;
+        this.ProductName = product_name;
+        this.RefWorkPlan = ref_workplan;
+    }
+}
+
+//CompositeKey('bmes', ['salestermstate', so_id, st_id]);
+class SalesTermState {
+    Condition = ''; //Waiting > Started > Finished
+    Start = ''; //
+    End = '';
+    constructor() {
+        this.Condition = 'Waiting';
+        this.Start = '';
+        this.End = '';
+    }
+}
+
+//message to apps
+class SalesTermStateMessage {
+    ID = "";
+    ProductName = '';
+    RefWorkPlan = '';
+    Condition = ""; //Editing (not used) > Released > Started > Pending > End
+    Start = "";
+    End = "";
+}
+
+
+
 
 module.exports = {
     WorkStation: WorkStation,
@@ -96,6 +127,8 @@ module.exports = {
     WorkPlan: WorkPlan,
     SalesTerm: SalesTerm,
     SalesTermState: SalesTermState,
+    SalesTermStateMessage: SalesTermStateMessage,
     SalesOrder: SalesOrder,
-    SalesOrderState: SalesOrderState
+    SalesOrderState: SalesOrderState,
+    SalesOrderStateMessage: SalesOrderStateMessage
 };

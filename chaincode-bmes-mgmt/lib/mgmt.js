@@ -6,9 +6,9 @@
 
 
 const { Contract } = require('fabric-contract-api');
-const { WorkStation, Transition, WorkPlan, SalesTerm, SalesTermState, SalesOrder, SalesOrderState } = require('./mgmt_util')
+const { WorkStation, Transition, WorkPlan, SalesTerm, SalesTermState, SalesOrder, SalesOrderState, SalesOrderStateMessage, SalesTermStateMessage } = require('./mgmt_util')
 const { PromisePayloadToObject, BufferToObject } = require('./tool_util');
-
+const { WorkOrderId, WorkOrderState } = require('./prod_util');
 
 const DEBUG_MODE = true;
 function showMsg(key) {
@@ -117,7 +117,7 @@ class BMES_MGMT extends Contract {
 
         //check WorkStation exist in ledger or not
         const wsJson = await ctx.stub.getState(key);
-        if (wsJson && wsJson.length == 0) {
+        if (!wsJson && wsJson.length == 0) {
             throw new Error(`The asset ${name} (type=workstation) does not exist`);
         }
 
@@ -231,13 +231,21 @@ class BMES_MGMT extends Contract {
         so.AddSalesTerm("1", new SalesTerm("1", 'Product 1000', '1000'));
         so.AddSalesTerm("2", new SalesTerm("2", 'Product 1000', '1000'));
 
-        const key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);        
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
+        const so_key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);        
+        await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so)));
 
-        const key_of_state = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so.ID]);
+        const so_state_key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so.ID]);
         let so_state = new SalesOrderState();
         so_state.Release = str_ISO8601_timestamp;
-        await ctx.stub.putState(key_of_state, Buffer.from(JSON.stringify(so_state)));
+        await ctx.stub.putState(so_state_key, Buffer.from(JSON.stringify(so_state)));
+
+        //initialize sales terms state
+        for (var key in so.SalesTerms) {
+            const sales_term_key = ctx.stub.createCompositeKey('bmes', ['salestermstate', so.ID, key]);
+            const sales_term_state = new SalesTermState();
+            await ctx.stub.putState(sales_term_key, Buffer.from(JSON.stringify(sales_term_state)));
+        }
+
         showMsg(`Sales Order ${so.ID}  data is put into the mgmt legder and its content: ${JSON.stringify(so, null, 4)}`);
     }
 
@@ -254,7 +262,7 @@ class BMES_MGMT extends Contract {
         if (!so_json || so_json.length === 0) {
             throw new Error(`The SalesOrder ${so_id} does not exist`);
         }
-        showMsg(`so_json type: ${typeof (so_json)} and value: ${JSON.stringify(so_json, null, 4)}`); 
+        showMsg(`so_json type: ${typeof(so_json)} and value: ${JSON.stringify(so_json, null, 4)}`); 
 
         showMsg(`*****  END: GetSalesOrder *****`)
         //return information
@@ -265,45 +273,93 @@ class BMES_MGMT extends Contract {
         showMsg(`*****  START: Get SalesOrder State *****`)
         // prepare a buffer
         //generate composite_key
-        let key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so_id]);
+        let so_state_key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so_id]);
 
         // == find state by the composite_key ==
-        let buf_so_state = await ctx.stub.getState(key);
-        //showMsg(`so_state_json type: ${typeof (buf_so_state)} and value: ${JSON.stringify(buf_so_state, null, 4)}`);
-        let so_state_json = BufferToObject(buf_so_state, "GetSalesOrderState: buf_so_state > so_state_json")
-        //check whether workplan exist or not
-        if (!so_state_json || so_state_json.length === 0) {
-            throw new Error(`The State of Sales Order ${so_id} does not exist`);
-        }
-        //showMsg(`so_state_json type: ${typeof (so_state_json)} and value: ${JSON.stringify(so_state_json, null, 4)}`);
+        let buf_so_state = await ctx.stub.getState(so_state_key);
+       // showMsg(`buf_so_state type: ${typeof(buf_so_state)} and value: ${JSON.stringify(buf_so_state, null, 4)}`);
+        let obj_so_state = BufferToObject(buf_so_state, "GetSalesOrderState: buf_so_state > so_state_json")
+        if (!obj_so_state || obj_so_state.length === 0) {
+            throw new Error(`The State of Sales Order ${so_id} does not exist`);        }
+        let so_state = Object.assign(new SalesOrderState(), obj_so_state);
+        //showMsg(`so_state type: ${typeof(so_state)} and value: ${JSON.stringify(so_state, null, 4)}`);
          
         // == sync sale order state ==
-        const buf_so_state_record_at_prod = await ctx.stub.invokeChaincode('bmes-prod', ['StartSaleOrderStateAtProd', so_id], 'channelprod');
-        //showMsg(`buf_so_state_record_at_prod type: ${typeof (buf_so_state_record_at_prod)} and value: ${JSON.stringify(buf_so_state_record_at_prod, null, 4)}`);
+        const buf_so_state_record_at_prod = await ctx.stub.invokeChaincode('bmes-prod', ['GetSaleOrderStateAtProd', so_id], 'channelprod');
+        const so_state_record_at_prod = PromisePayloadToObject(buf_so_state_record_at_prod, "invokeChaincode >GetSaleOrderStateAtProd")
 
-        const so_state_record_at_prod = PromisePayloadToObject(buf_so_state_record_at_prod, "invokeChaincode >GetWorkOrderState")
-        //showMsg(`so_state_record_at_prod type: ${typeof (so_state_record_at_prod)} and value: ${JSON.stringify(so_state_record_at_prod, null, 4)}`);
-       
-        if (so_state_json.Start != so_state_record_at_prod.Start) {
-            so_state_json.Start = so_state_record_at_prod.Start
+        //update sales order state
+        if (so_state.Start != so_state_record_at_prod.Start) {
+            so_state.Start = so_state_record_at_prod.Start
         }
-        if (so_state_json.End != so_state_record_at_prod.End) {
-            so_state_json.End = so_state_record_at_prod.End
+        if (so_state.End != so_state_record_at_prod.End) {
+            so_state.End = so_state_record_at_prod.End
         }
+        if (so_state.Condition != so_state_record_at_prod.Condition) {
+            so_state.Condition = so_state_record_at_prod.Condition
+        }
+        await ctx.stub.putState(so_state_key, Buffer.from(JSON.stringify(so_state)));
+
+        //prepare SalesOrderStateMessage
+        let so_key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
+        let buf_so = await ctx.stub.getState(so_key);
+       // showMsg(`buf_so type: ${typeof(buf_so)} and value: ${JSON.stringify(buf_so, null, 4)}`);
+        let so = BufferToObject(buf_so, "GetSalesOrderState: buf_so > so")
+        showMsg(`so type: ${typeof(so)} and value: ${JSON.stringify(so, null, 4)}`);
+
+        let sos_msg = new SalesOrderStateMessage();
+        sos_msg = Object.assign(sos_msg, so);
+        sos_msg = Object.assign(sos_msg, so_state);
+        showMsg(`sos_msg type: ${typeof(sos_msg)} and value: ${JSON.stringify(sos_msg, null, 4)}`);
 
         // == sync sale term state ==
+        // 使用 for...in 迴圈遍歷物件的所有鍵名
+        for (var key in so.SalesTerms) {
+            if (so.SalesTerms.hasOwnProperty(key)) { // 檢查是否為物件自身的屬性，避免遍歷原型鏈上的屬性
+
+                // get wo state from channelprod
+                const sid = sos_msg.ID;
+                const stid = key.toString();
+                const wpid = sos_msg.SalesTerms[stid].RefWorkPlan;
+                const buf_wo_state = await ctx.stub.invokeChaincode('bmes-prod', ['GetWorkOrderState', sid, stid, wpid], 'channelprod');
+                showMsg(`buf_wo_state type: ${typeof(buf_wo_state)} and value: ${JSON.stringify(buf_wo_state, null, 4)}`);
+                const wo_state = PromisePayloadToObject(buf_wo_state, "invokeChaincode > GetWorkOrderState")
+                showMsg(`wo_state type: ${typeof(wo_state)} and value: ${JSON.stringify(wo_state, null, 4)}`);
+
+                // get st state 
+                const sales_term_key = await ctx.stub.createCompositeKey('bmes', ['salestermstate', so_id, key]);               
+                const buf_sales_term_state = await ctx.stub.getState(sales_term_key);
+                //showMsg(`buf_sales_term_state type: ${typeof(buf_sales_term_state)} and value: ${JSON.stringify(buf_sales_term_state, null, 4)}`);
+                let sales_term_state = BufferToObject(buf_sales_term_state, "GetSalesOrderState: bnf_sales_term_state > sales_term_state")
+                showMsg(`sales_term_state type: ${typeof(sales_term_state)} and value: ${JSON.stringify(sales_term_state, null, 4)}`);
+
+                //update st state
+                if (sales_term_state.Start != wo_state.Start) {
+                    sales_term_state.Start = wo_state.Start
+                }
+                if (sales_term_state.End != wo_state.End) {
+                    sales_term_state.End = wo_state.End
+                }
+                if (sales_term_state.Condition != wo_state.Condition) {
+                    sales_term_state.Condition = wo_state.Condition
+                }
+                showMsg(`updated sales_term_state type: ${typeof(sales_term_state)} and value: ${JSON.stringify(sales_term_state, null, 4)}`);
+                await ctx.stub.putState(sales_term_key, Buffer.from(JSON.stringify(sales_term_state)));
 
 
+                let sts_msg = new SalesTermStateMessage();
+                sts_msg = Object.assign(sts_msg, so.SalesTerms[key]);
+                sts_msg = Object.assign(sts_msg, sales_term_state);
+                showMsg(`sts_msg type: ${typeof(sts_msg)} and value: ${JSON.stringify(sts_msg, null, 4)}`);
 
-
-
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(so_state_json)));
-
-        let so_json = JSON.stringify(so_state_json);
+                sos_msg.AddSalesTerm(key, sts_msg);
+            }
+        }
+        let result = JSON.stringify(sos_msg);
 
         showMsg(`*****  END: Get SalesOrder State *****`)
         //return information
-        return so_json.toString();
+        return result.toString();
     }
 
     async GetAllOrder(ctx) {

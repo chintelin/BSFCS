@@ -62,6 +62,7 @@ class BMES_PROD extends Contract {
         //創造SalesOrderStateAtProd，並給予開工時間
         let so_state = new SalesOrderStateAtProd();
         so_state.Start = str_ISO8601_timestamp;
+        so_state.Condition = "Started";
         const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so_state)));
 
@@ -78,12 +79,14 @@ class BMES_PROD extends Contract {
             //Be preparing wip and transition ids, composed by so_id (ready), term_id (ready), wp_id (ready), tran_id (not yet)
 
             showMsg("87");
-            // create wip from its key and state, and then commit these to ledger
+
+            // 創建 work order
             const wo_id = new WorkOrderId(so_id, str_sales_term_id, str_wp_id);
             const wo_id_partialkey = wo_id.ToArray();
             showMsg(`wo_id_partialkey type: ${typeof (wo_id_partialkey)} and value: ${JSON.stringify(wo_id_partialkey, null, 4)}`); //confirm in docker container if necessary
             const wo_key = ctx.stub.createCompositeKey('bmes', wo_id_partialkey); //generate composite key for wip key
             const wo_state = new WorkOrderState(); // initialized with default condition
+            wo_state.Condition = "Started";
             showMsg(`wo_state type: ${typeof (wo_state)} and value: ${JSON.stringify(wo_state, null, 4)}`); 
             await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state))); // commit wip to prod ledger
 
@@ -135,14 +138,14 @@ class BMES_PROD extends Contract {
     }
 
 
-    async StartSaleOrderStateAtProd(ctx, so_id) {
-        showMsg('============= START : StartSaleOrderStateAtProd =============');
+    async GetSaleOrderStateAtProd(ctx, so_id) {
+        showMsg('============= START : GetSaleOrderStateAtProd =============');
 
         const so_key = await ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         const so_json = await ctx.stub.getState(so_key);
         showMsg(`so_json type: ${typeof (so_json)} \n  and value: ${JSON.stringify(so_json, null, 4)}`);
         return so_json.toString();
-        showMsg('============= END : StartSaleOrderStateAtProd =============');
+        showMsg('============= END : GetSaleOrderStateAtProd =============');
     }
 
     // when a carrier gets into a mahchine
@@ -151,20 +154,20 @@ class BMES_PROD extends Contract {
 
         // find carrier state recorded in ledger
         const key_carrier = ctx.stub.createCompositeKey('bmes', ['carrier', str_carrier_id]);
-        const buf_workTerrmOfCarrier = await ctx.stub.getState(key_carrier);
-        if (!buf_workTerrmOfCarrier || buf_workTerrmOfCarrier.length === 0) {
+        const buf_carrierState = await ctx.stub.getState(key_carrier);
+        if (!buf_carrierState || buf_carrierState.length === 0) {
             return JSON.stringify(new CheckInMessage('No', '', '', `The carrier ${str_carrier_id} does not exist`));
         }
-        showMsg(`buf_workTerrmOfCarrier type: ${typeof (buf_workTerrmOfCarrier)} \n  and value: ${JSON.stringify(buf_workTerrmOfCarrier, null, 4)}`);
+        showMsg(`buf_workTerrmOfCarrier type: ${typeof (buf_carrierState)} \n  and value: ${JSON.stringify(buf_carrierState, null, 4)}`);
         // buf_workTerrmOfCarrier type: object and value: {"type": "Buffer","data": [ 123, 34, 83,....]}*/
-        const obj_WoOfCarrier = BufferToObject(buf_workTerrmOfCarrier);
-        showMsg(`obj_WoOfCarrier type: ${typeof (obj_WoOfCarrier)} \n  and value: ${JSON.stringify(obj_WoOfCarrier, null, 4)}`);
+        const obj_carrierState = BufferToObject(buf_carrierState);
+        showMsg(`obj_WoOfCarrier type: ${typeof (obj_carrierState)} \n  and value: ${JSON.stringify(obj_carrierState, null, 4)}`);
         //  obj_WoOfCarrier type: object  and value: {"Status": "free","TransitionInfo": null}         
 
-        const carrierState = Object.assign(new CarrierState(null, null), obj_WoOfCarrier);
+        const carrierState = Object.assign(new CarrierState(null, null), obj_carrierState);
         showMsg(`init carrierState type: ${typeof (carrierState)} \n  and value: ${JSON.stringify(carrierState, null, 4)}`);
 
-        if (carrierState.Status == "free")//no task in the carrier => try to assign a task
+        if (carrierState.Condition == "free")//no task in the carrier => try to assign a task
         {
             showMsg(" ** Try to assign a task to carrier** ")
             //try to find possible wip
@@ -190,7 +193,7 @@ class BMES_PROD extends Contract {
                    obj_wipState type: object and value: {"CurrentTransitionID":"10","BindingWithCarrier":null}
                 */
 
-                if (wo_state.BindingWithCarrier == null) {
+                if (wo_state.BindingWithCarrier == null && wo_state.Condition == "Started") {
                     const wo_key = result.value.key;
                     list_Wo_NotBindingToCarrier[wo_key] = wo_state;
                 }
@@ -200,7 +203,7 @@ class BMES_PROD extends Contract {
             //if list_Wip_NoCarrier is empty, report a CheckInResponse with 'No' on_duty
             const keys = Object.keys(list_Wo_NotBindingToCarrier);
             if (keys.length == 0) {
-                return JSON.stringify(new CheckInMessage("No", '', '', 'The check-in carrier is free but no wip can be binded with it'));
+                return JSON.stringify(new CheckInMessage("No", '', '', 'The check-in carrier is free but no suitable work order can be binded with it'));
             }
 
             //else select the index of the first wo if list_wo_waiting is not empty. 
@@ -233,7 +236,7 @@ class BMES_PROD extends Contract {
             const worktermid = new WorkTermId(work_term_info[1], work_term_info[2], work_term_info[3], work_term_info[4]);
 
             //update carrier state
-            carrierState.Status = "busy";
+            carrierState.Condition = "busy";
             carrierState.CurrentWorkTermId = worktermid;         
             showMsg(`updated carrierState type: ${typeof (carrierState)} \n  and value: ${JSON.stringify(carrierState, null, 4)}`);
             await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
@@ -350,10 +353,11 @@ class BMES_PROD extends Contract {
         if (!buf_state_carrier || buf_state_carrier.length === 0) {
             return JSON.stringify(new CheckInMessage('No', '', '', `The carrier ${str_carrier_id} does not exist`));
         }
-        let obj_state_carrier = BufferToObject(buf_state_carrier, "ChectOut-373");
+        let obj_carrierState = BufferToObject(buf_state_carrier, "ChectOut-373");
+        let carrierState = Object.assign(new CarrierState(null, null), obj_carrierState);
 
         //取得 workterm state
-        const curWorkTermId = Object.assign(new WorkTermId(), obj_state_carrier.CurrentWorkTermId);
+        const curWorkTermId = Object.assign(new WorkTermId(), carrierState.CurrentWorkTermId);
         showMsg(`curWorkTermId type: ${typeof (curWorkTermId)} \n  and value: ${JSON.stringify(curWorkTermId, null, 4)}`);
         //const wt_id_info = curWorkTermId.ToArray();
         //const key_curWorkTermId = ctx.stub.createCompositeKey('bmes', wt_id_info);
@@ -377,26 +381,31 @@ class BMES_PROD extends Contract {
         const wo_partialkey = wo_id.ToArray();
         const wo_key = ctx.stub.createCompositeKey('bmes', wo_partialkey); //generate composite key for wip key
         let buf_wo_state = await ctx.stub.getState(wo_key);
-        let wo_state = BufferToObject(buf_wo_state, "ChectOut-380");
+        let obj_wo_state = BufferToObject(buf_wo_state, "ChectOut-380");
+        let wo_state = Object.assign(new WorkOrderState, obj_wo_state);
 
         let msg = '';
         if (next_tran_id == "done") {
             //update work order state
             wo_state.End = str_ISO8601_timestamp;
+            wo_state.Condition = "End";
             await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
 
             //free carrier
-            obj_state_carrier.CurrentWorkTermId = null;
-            obj_state_carrier.Status = 'free'
-            await ctx.stub.putState(key_carrier, JSON.stringify(obj_state_carrier));
+            carrierState.CurrentWorkTermId = null;
+            carrierState.Condition = 'free'
+            await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
 
             //update salesorderstateatprod
             const so_state_at_prod_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", curWorkTermId.SO_id]);
             let buf_so_state_at_prod = await ctx.stub.getState(so_state_at_prod_key);
             let so_state_at_prod = BufferToObject(buf_so_state_at_prod, "ChectOut-395");
+            let obj_so_state_at_prod = Object.assign(new SalesOrderStateAtProd(), so_state_at_prod);
 
-            so_state_at_prod.End = str_ISO8601_timestamp;
-            await ctx.stub.putState(so_state_at_prod_key, Buffer.from(JSON.stringify(so_state_at_prod)));
+            obj_so_state_at_prod.End = str_ISO8601_timestamp;
+            obj_so_state_at_prod.Condition = "End";
+
+            await ctx.stub.putState(so_state_at_prod_key, Buffer.from(JSON.stringify(obj_so_state_at_prod)));
 
             msg = new CheckOutMessage("", `The transition and work order is done.`);
         }
@@ -408,8 +417,8 @@ class BMES_PROD extends Contract {
             nextWorkTermId.Tran_id = next_tran_id;
 
             //update carrier state
-            obj_state_carrier.CurrentWorkTermId = nextWorkTermId;
-            await ctx.stub.putState(key_carrier, JSON.stringify(obj_state_carrier));
+            carrierState.CurrentWorkTermId = nextWorkTermId;
+            await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
 
             let nextMachine = work_plan.TransitionList[next_tran_id];
             msg = new CheckOutMessage(nextMachine, `The transition is done. The next transition will be performed at Machine ${nextMachine}`);
@@ -425,9 +434,10 @@ class BMES_PROD extends Contract {
         const key = ctx.stub.createCompositeKey('bmes', wo_partialkey);
         const res = await ctx.stub.getState(key);
         //showMsg(`res type: ${typeof (res)} and value: ${JSON.stringify(res, null, 4)}`); 
-        const res_obj = BufferToObject(res, "GetWorkOrderState");
-        //showMsg(`res type: ${typeof (res_obj)} and value: ${JSON.stringify(res_obj, null, 4)}`);    
+        const res_obj = BufferToObject(res, "GetWorkOrderState");        
+        showMsg(`res_obj type: ${typeof (res_obj)} and value: ${JSON.stringify(res_obj, null, 4)}`);
         showMsg('============= END : GetWorkOrderState =============');
+        return JSON.stringify(res_obj);
     }
 
     async GetWorkTermState(ctx, so, st, wp, wt) {
@@ -436,7 +446,8 @@ class BMES_PROD extends Contract {
         const wt_partialkey = id.ToArray();
         const key = ctx.stub.createCompositeKey('bmes', wt_partialkey);
         let res = await ctx.stub.getState(key);
-        return BufferToObject(res, "GetWorkTermState");
+        const res_obj  = BufferToObject(res, "GetWorkTermState");
+        return JSON.stringify(res_obj);
         showMsg('============= END : GetWorkTermState =============');
     }
 
