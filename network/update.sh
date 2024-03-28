@@ -46,11 +46,11 @@ START_TIME=$(date +%s)
 case $ctxname in
     "mgmt")
         echo "mgmt ver = $ctxver"
-        #./network.sh deployCC -ccn bmes-mgmt -ccl javascript -c channelmgmt -ccv $ctxver -ccs $ctxver -ccp "../chaincode-bmes-mgmt"
+        ./network.sh deployCC -ccn bmes-mgmt -ccl javascript -c channelmgmt -ccv $ctxver -ccs $ctxver -ccp "../chaincode-bmes-mgmt"
         ;;
     "prod")
         echo "prod ver = $ctxver"
-        #./network.sh deployCC -ccn bmes-prod -ccl javascript -c channelprod -ccv $ctxver -ccs $ctxver -ccp "../chaincode-bmes-prod"
+        ./network.sh deployCC -ccn bmes-prod -ccl javascript -c channelprod -ccv $ctxver -ccs $ctxver -ccp "../chaincode-bmes-prod"
         ;;
 esac
 
