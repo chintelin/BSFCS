@@ -398,13 +398,33 @@ class BMES_MGMT extends Contract {
     async UpdateSalesOrder(ctx, so_json) {
         showMsg('============= START : UpdateSalesOrder =============');
         const so = JSON.parse(so_json);
-        const id = so.ID;
-        let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
+        const so_id = so.ID;
 
-        showMsg(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
-        let res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));        
-        showMsg('============= END : UpdateSalesOrder =============');
-        return res;
+        //update so state
+        await GetSalesOrderState(ctx, id);
+
+        //Check sales order state
+        let so_state_key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so_id]);
+        let buf_so_state = await ctx.stub.getState(so_state_key);
+        let obj_so_state = BufferToObject(buf_so_state, "GetSalesOrderState: buf_so_state > so_state_json")
+        if (!obj_so_state || obj_so_state.length === 0) {
+            throw new Error(`The State of Sales Order ${so_id} does not exist`);
+        }
+        let so_state = Object.assign(new SalesOrderState(), obj_so_state);
+
+        
+        if (so_state.Condition == "Released")// only in released condition, so can be updated.
+        {
+            let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
+            showMsg(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
+            let res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
+            showMsg('============= END : UpdateSalesOrder =============');
+            return JSON.stringify(res);
+        }
+        else {
+            let no_updated_msg = `The order ${so_id} cannot be updated due to its condition = ${so_state.Condition}`;
+            return no_updated_msg;
+        }        
     }
 
     async getHistory(ctx, id) {
