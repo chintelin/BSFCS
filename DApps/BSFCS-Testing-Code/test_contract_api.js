@@ -148,7 +148,8 @@ async function main() {
 	
 			console.log('\n--> Submit Transaction: InitCarrier....');		
 			result = await contractProd.submitTransaction('InitCarrier');	
-			
+
+						
 			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');	
 			dt = new Date(Date.now());
 			await contractProd.submitTransaction('StartSaleOrder','1000', dt.toISOString());
@@ -204,11 +205,16 @@ async function main() {
 				console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 			}
 
+			console.log('\n--> Submit Transaction: PendSalesOrder with id=1000. ....');				 
+			result = await contractProd.submitTransaction('PendSalesOrder', '1000');
+			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
 			console.log('\n--> Submit Transaction: Checkin @Magazine....');
 			dt = new Date(Date.now());
 			 checkInResult = await contractProd.submitTransaction('CheckIn', '1', "Magazine", dt.toISOString());
 			let obj_checkInResult_Magazine = JSON.parse(checkInResult);
-			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);;
+			console.log(`*** Invoke Result: ${prettyJSONString(checkInResult.toString())}`);
+
 
 			if (obj_checkInResult_Magazine.IsOnDuty == "Yes") {
 				let func = obj_checkInResult_Magazine.Function;

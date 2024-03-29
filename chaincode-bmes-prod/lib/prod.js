@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { Contract } = require('fabric-contract-api');
 const { SalesOrderStateAtProd, WorkOrderId, WorkOrderState, CarrierState, WorkTermId, WorkTermState, ProductionMessage, CheckInMessage, CheckOutMessage } = require('./prod_util');
@@ -32,7 +32,7 @@ class BMES_PROD extends Contract {
     async StartSaleOrder(ctx, so_id, str_ISO8601_timestamp) {
         showMsg('============= START : StartSaleOrder =============');
 
-        //�qbmes-mgmt�q�D���Xso ( get sales order object by id from mgmt chaincode)
+        //從bmes-mgmt通道取出so ( get sales order object by id from mgmt chaincode)
         const buffer_so_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetSalesOrder', so_id], 'channelmgmt');
         if (buffer_so_response.status != 200) {
             return JSON.stringify({ status: buffer_so_response.status });
@@ -49,7 +49,7 @@ class BMES_PROD extends Contract {
   
         //Start preparing  wip and transition ids, composed by so_id (ready), term_id, wp_id, tran_id
 
-        //�гySalesOrderStateAtProd�A�õ����}�u�ɶ�
+        //創造SalesOrderStateAtProd，並給予開工時間
         let so_state = new SalesOrderStateAtProd();
         so_state.Start = str_ISO8601_timestamp;
         so_state.Condition = "Started";
@@ -68,7 +68,7 @@ class BMES_PROD extends Contract {
             const str_wp_id = obj_salesTerms.RefWorkPlan.toString();
             //Be preparing wip and transition ids, composed by so_id (ready), term_id (ready), wp_id (ready), tran_id (not yet)
 
-            // �Ы� work order �äW�Ǩ�ledger
+            // 創建 work order 並上傳到ledger
             const wo_id = new WorkOrderId(so_id, str_sales_term_id, str_wp_id);
             const wo_id_partialkey = wo_id.ToArray();
             showMsg(`wo_id_partialkey type: ${typeof (wo_id_partialkey)} and value: ${JSON.stringify(wo_id_partialkey, null, 4)}`); //confirm in docker container if necessary
@@ -122,6 +122,43 @@ class BMES_PROD extends Contract {
         showMsg('============= END : StartSaleOrder =============');
     }
 
+    async PendSalesOrder(ctx, so_id) {
+        showMsg('============= START : PendSalesOrder =============');
+
+        // 檢查銷售訂單是否存在
+        const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
+        const so_json = await ctx.stub.getState(so_key);
+        if (!so_json || so_json.length === 0) {
+            throw new Error(`The sales order ${so_id} does not exist`);
+        }
+
+        // 將銷售訂單的狀態設置為'Pending'
+        let so_state = JSON.parse(so_json.toString());
+        so_state.Condition = "Pending";
+
+        // 更新銷售訂單的狀態到分布式账本
+        await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so_state)));
+
+        // 檢查所有相關的工作訂單並將其狀態設置為'Pending'
+        const iterator = await ctx.stub.getStateByPartialCompositeKey('bmes', ['workorder']);
+        let result = await iterator.next();
+        while (!result.done) {
+            const wo_key = result.value.key;
+            const splited_wo_key = ctx.stub.splitCompositeKey(wo_key);
+            const wo_json = result.value.value.toString();
+            let wo_state = JSON.parse(wo_json);
+            showMsg(`wo_state type: ${typeof (wo_state)} \n  and value: ${JSON.stringify(wo_state, null, 4)}`);
+            if (splited_wo_key.attributes[1] == so_id) {
+                wo_state.Condition = "Pending";
+                await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
+                showMsg(`wo_state.Condition is changed to "Pending"`);
+            }
+            result = await iterator.next();
+        }
+
+        showMsg('============= END : PendSalesOrder =============');
+    }
+
 
     async GetSaleOrderStateAtProd(ctx, so_id) {
         showMsg('============= START : GetSaleOrderStateAtProd =============');
@@ -137,19 +174,17 @@ class BMES_PROD extends Contract {
     async CheckIn(ctx, str_carrier_id, str_workstation_name, str_ISO8601_timestamp) {
         showMsg('============= START : CheckIn =============');
 
-        // find carrier state recorded in ledger
+        // 檢查搬運車是否存在
         const key_carrier = ctx.stub.createCompositeKey('bmes', ['carrier', str_carrier_id]);
         const buf_carrierState = await ctx.stub.getState(key_carrier);
         if (!buf_carrierState || buf_carrierState.length === 0) {
             return JSON.stringify(new CheckInMessage('No', '', '', `The carrier ${str_carrier_id} does not exist`));
         }
-        //showMsg(`146 buf_workTerrmOfCarrier type: ${typeof (buf_carrierState)} \n  and value: ${JSON.stringify(buf_carrierState, null, 4)}`);
-        // buf_workTerrmOfCarrier type: object and value: {"type": "Buffer","data": [ 123, 34, 83,....]}*/
         const obj_carrierState = BufferToObject(buf_carrierState);
-        //showMsg(`149 obj_WoOfCarrier type: ${typeof (obj_carrierState)} \n  and value: ${JSON.stringify(obj_carrierState, null, 4)}`);
-        //  obj_WoOfCarrier type: object  and value: {"Status": "free","TransitionInfo": null}         
-
         const carrierState = Object.assign(new CarrierState(null, null), obj_carrierState);
+
+
+
         showMsg(`153 init carrierState type: ${typeof (carrierState)} \n  and value: ${JSON.stringify(carrierState, null, 4)}`);
 
         if (carrierState.Condition == "free")//no task in the carrier => try to assign a task
@@ -168,7 +203,7 @@ class BMES_PROD extends Contract {
             }
             */
 
-           //���X�Ҧ��S���j�w��WO
+            //取出所有沒有綁定的WO
             let list_Wo_NotBindingToCarrier = {};
             while (!result.done) {
                 // get value from result
@@ -198,11 +233,11 @@ class BMES_PROD extends Contract {
             binding_wo_state.BindingWithCarrier = str_carrier_id;
             binding_wo_state.Start = str_ISO8601_timestamp;
 
-            //�ˬd
-            //1. init ��transition�O�_����?
-            //2. ���ۧ�Xworkterm�A�ݬݬO�_��re�}�Y��transition
+            //檢查
+            //1. init 的transition是否完成?
+            //2. 順著找出workterm，看看是否有re開頭的transition
 
-            //binding_wo_state.CurrentTransitionID = "init";  //�o�����Ӧ���
+            //binding_wo_state.CurrentTransitionID = "init";  //這行應該有值
             showMsg(`binding_wo_state CurrentTransitionID = ${binding_wo_state.CurrentTransitionID}`);
 
             // update work order state
@@ -221,7 +256,7 @@ class BMES_PROD extends Contract {
             let cur_transition_id = binding_wo_state.CurrentTransitionID;
             let work_term_info = splited_wo_key.attributes
             //work_term_info.push('init'); 
-            work_term_info.push(cur_transition_id); 
+            work_term_info.push(cur_transition_id);
             work_term_info[0] = "WorkTerm";
 
             showMsg(`work_term_info type: ${typeof (work_term_info)} \n  and value: ${JSON.stringify(work_term_info, null, 4)}`);
@@ -230,46 +265,61 @@ class BMES_PROD extends Contract {
 
             //update carrier state
             carrierState.Condition = "busy";
-            carrierState.CurrentWorkTermId = worktermid;         
+            carrierState.CurrentWorkTermId = worktermid;
             showMsg(`updated carrierState type: ${typeof (carrierState)} \n  and value: ${JSON.stringify(carrierState, null, 4)}`);
             await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
 
         }//end if carrierState.Status == "free"
 
-        // carrierState.status is busy
-        // get workplan data
-        const buffer_wp_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', carrierState.CurrentWorkTermId.WP_id], 'channelmgmt');
-        if (buffer_wp_response.status != 200) {
-            showMsg(JSON.stringify(buffer_wp_response));
-            return JSON.stringify(buffer_wp_response);
+        if (carrierState.Condition == "busy") {
+            // 檢查工作訂單的狀態
+            const wo_id = new WorkOrderId(carrierState.CurrentWorkTermId.SO_id, carrierState.CurrentWorkTermId.Term_id, carrierState.CurrentWorkTermId.WP_id);
+            const wo_partialkey = wo_id.ToArray();
+            const wo_key = ctx.stub.createCompositeKey('bmes', wo_partialkey);
+            const buf_wo_state = await ctx.stub.getState(wo_key);
+            const obj_wo_state = BufferToObject(buf_wo_state);
+            const wo_state = Object.assign(new WorkOrderState(null, null), obj_wo_state);
+
+            // 如果工作訂單的狀態是'Pending'，則回傳暫停訊息
+            if (wo_state.Condition == "Pending") {
+                return JSON.stringify(new CheckInMessage('No', '', '', `The work order on carrier ${str_carrier_id} is pending and does not need to perform any action`));
+            }
+
+            // carrierState.status is busy
+            // get workplan data
+            const buffer_wp_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', carrierState.CurrentWorkTermId.WP_id], 'channelmgmt');
+            if (buffer_wp_response.status != 200) {
+                showMsg(JSON.stringify(buffer_wp_response));
+                return JSON.stringify(buffer_wp_response);
+            }
+            const obj_wp = PromisePayloadToObject(buffer_wp_response, "CheckIn-258");
+            showMsg(`obj_wp type: ${typeof (obj_wp)} \n  and value: ${JSON.stringify(obj_wp, null, 4)}`);
+
+            /* example of obj_wp
+             { "ID": "1000",
+               "TransitionList": {
+                 "10": { "ID": "10", "WorkStation": "ASRS", "Function": "2", "Parameter": "210", "OK_To": "20", "NOK_To": "99" },
+                 "20": { "ID": "20", "WorkStation": "Magazine",  "Function": "",   "Parameter": "", "OK_To": "30", "NOK_To": "99" }  }
+            */
+
+            // get transition data
+            const used_transition = obj_wp.TransitionList[carrierState.CurrentWorkTermId.Tran_id];
+            showMsg(`used_transition type: ${typeof (used_transition)} \n  and value: ${JSON.stringify(used_transition, null, 4)}`);
+            const planned_workstation = used_transition.WorkStation;
+
+            // if start machine is not check-in machine, report a CheckInResponse with 'No' on_duty
+            if (str_workstation_name != planned_workstation) {
+                return JSON.stringify(new CheckInMessage("No", '', '', `${str_workstation_name} does not serve the present transition of the carrier`));
+            }
+
+            // if all is ok, return recipe to slave Dapp
+            const planned_function = used_transition.Function;
+            const planned_parameter = used_transition.Parameter;
+
+            let msg = new CheckInMessage('Yes', planned_function.toString(), planned_parameter.toString(), `Carrier ${str_carrier_id} checkin ${planned_workstation} to execute func ${planned_function} with parameters ${planned_parameter}`)
+            showMsg('============= END : CheckIn =============');
+            return JSON.stringify(msg);
         }
-        const obj_wp = PromisePayloadToObject(buffer_wp_response, "CheckIn-258");
-        showMsg(`obj_wp type: ${typeof (obj_wp)} \n  and value: ${JSON.stringify(obj_wp, null, 4)}`);
-
-        /* example of obj_wp
-         { "ID": "1000",
-           "TransitionList": {
-             "10": { "ID": "10", "WorkStation": "ASRS", "Function": "2", "Parameter": "210", "OK_To": "20", "NOK_To": "99" },
-             "20": { "ID": "20", "WorkStation": "Magazine",  "Function": "",   "Parameter": "", "OK_To": "30", "NOK_To": "99" }  }
-        */
-
-        // get transition data
-        const used_transition = obj_wp.TransitionList[carrierState.CurrentWorkTermId.Tran_id];
-        showMsg(`used_transition type: ${typeof (used_transition)} \n  and value: ${JSON.stringify(used_transition, null, 4)}`);
-        const planned_workstation = used_transition.WorkStation;
-
-        // if start machine is not check-in machine, report a CheckInResponse with 'No' on_duty
-        if (str_workstation_name != planned_workstation) {
-            return JSON.stringify(new CheckInMessage("No", '', '', `${str_workstation_name} does not serve the present transition of the carrier`));
-        }
-
-        // if all is ok, return recipe to slave Dapp
-        const planned_function = used_transition.Function;
-        const planned_parameter = used_transition.Parameter;
-
-        let msg = new CheckInMessage('Yes', planned_function.toString(), planned_parameter.toString(), `Carrier ${str_carrier_id} checkin ${planned_workstation} to execute func ${planned_function} with parameters ${planned_parameter}`)
-        showMsg('============= END : CheckIn =============');
-        return JSON.stringify(msg);
     }
 
 
@@ -300,7 +350,7 @@ class BMES_PROD extends Contract {
 
         let res = await ctx.stub.putState(key_curWorkTermId, Buffer.from(JSON.stringify(obj_state_workTerm)));
         let message = new ProductionMessage(str_machine_name, "contract", "proc_start", curWorkTermId);
-        await ctx.stub.setEvent('StartEvent', Buffer.from(JSON.stringify(message)));
+        //await ctx.stub.setEvent('StartEvent', Buffer.from(JSON.stringify(message)));
         showMsg('============= END : ReportTransitionStart =============');
     }
 
@@ -333,14 +383,14 @@ class BMES_PROD extends Contract {
 
         let res = await ctx.stub.putState(key_curWorkTermId, Buffer.from(JSON.stringify(obj_state_workTerm)));
         let message = new ProductionMessage(str_machine_name, "contract", "proc_start", curWorkTermId);
-        await ctx.stub.setEvent('StartEvent', Buffer.from(JSON.stringify(message)));
+        //await ctx.stub.setEvent('StartEvent', Buffer.from(JSON.stringify(message)));
         showMsg('============= END : ReportTransitionEnd =============');
     }
 
     async ChectOut(ctx, str_carrier_id, str_machine_name, str_ISO8601_timestamp) {
         showMsg('============= START : ChectOut =============');
 
-        //���o carrier state
+        //取得 carrier state
         const key_carrier = ctx.stub.createCompositeKey('bmes', ['carrier', str_carrier_id]);
         let buf_state_carrier = await ctx.stub.getState(key_carrier);
         if (!buf_state_carrier || buf_state_carrier.length === 0) {
@@ -349,7 +399,7 @@ class BMES_PROD extends Contract {
         let obj_carrierState = BufferToObject(buf_state_carrier, "ChectOut-373");
         let carrierState = Object.assign(new CarrierState(null, null), obj_carrierState);
 
-        //���o workterm state
+        //取得 workterm state
         const curWorkTermId = Object.assign(new WorkTermId(), carrierState.CurrentWorkTermId);
         showMsg(`curWorkTermId type: ${typeof (curWorkTermId)} \n  and value: ${JSON.stringify(curWorkTermId, null, 4)}`);
         //const wt_id_info = curWorkTermId.ToArray();
