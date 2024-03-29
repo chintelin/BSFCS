@@ -32,6 +32,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.js" />
+    <Content Include="cleanup.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="hlf-client.js" />
     <Content Include="install-module.sh" />
     <Content Include="routes\index.js" />

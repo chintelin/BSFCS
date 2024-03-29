@@ -34,6 +34,7 @@ function prettyJSONString(inputString) {
 }
 
 
+
 async function StartMgmt() {
 	try {
 		// build an in memory object with the network configuration (also known as a connection profile)
@@ -164,9 +165,13 @@ async function GetAllSO() {
 	return resultStr;
 }
 
-//async function GetSO(id) {
-//	let result = await contract.submitTransaction('GetSalesOrder', id).toString();
-//}
+async function GetSO(id) {
+	let result = await contract.submitTransaction('GetSalesOrder', id).toString();
+}
+
+async function GetSOState(id) {
+	let result = await contract.submitTransaction('GetSalesOrderState', id).toString();
+}
 
 //async function PostSO(so_json) {
 //	await contract.submitTransaction('PostOrder', so_json);
