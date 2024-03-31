@@ -12,20 +12,20 @@ class SalesOrderStateAtProd {
 class WorkOrderId {
     SO_id = "";
     Term_id = "";
-    WP_id = ""
-    constructor(so_id, term_id, wp_id) {
+   
+    constructor(so_id, term_id) {
         this.SO_id = so_id;
         this.Term_id = term_id;
-        this.WP_id = wp_id;
     }
 
     ToArray = function () {
-        return ['workorder', this.SO_id, this.Term_id, this.WP_id];
+        return ['workorder', this.SO_id, this.Term_id];
     }
 }
 
 class WorkOrderState {
     CurrentTransitionID = "0"; //first step is "init" and rework step is "rework" in default
+    ReferedWorkPlan = "";
     BindingWithCarrier = null;
     Condition = "Started";//Editing (not used) > Released > Started > Pending > End
     Start = "";  
@@ -43,23 +43,19 @@ class CarrierState {
 // WorkTermId key = ctx.stub.createCompositeKey('bmes', WorkTermId.ToArray());
 class WorkTermId {
     SO_id = "";
-    Term_id = "";
-    WP_id = ""
+    Term_id = "";    
     Tran_id = "";
-
-    constructor(so_id, term_id, wp_id, tran_id) {
+    constructor(so_id, term_id, tran_id) {
         this.SO_id = so_id;
         this.Term_id = term_id;
-        this.WP_id = wp_id;
         this.Tran_id = tran_id;
     }
     ToArray = function () {
-        return ['workterm', this.SO_id, this.Term_id, this.WP_id, this.Tran_id];
+        return ['workterm', this.SO_id, this.Term_id, this.Tran_id];
     }
 }
 
 class WorkTermState {
-
     Start = ""; //toLocaleTimeString() 
     End = "";
     Tag = "";

@@ -134,7 +134,7 @@ class BMES_MGMT extends Contract {
 
         //check WorkStation exist in ledger or not
         const wsJSON = await ctx.stub.getState(key);
-        if (wsJSON && wsJSON.length == 0) {
+        if (!wsJSON && wsJSON.length == 0) {
             throw new Error(`The asset ${name} (type=workstation) does not exist`);
         }
 
@@ -169,6 +169,7 @@ class BMES_MGMT extends Contract {
         //check whether workplan exist or not
         if (!wpJSON || wpJSON.length === 0) {
             throw new Error(`The workplan ${id} does not exist`);
+            //return wpJSON = "{}"; 
         }
 
         //return information
@@ -208,8 +209,16 @@ class BMES_MGMT extends Contract {
         const wp = JSON.parse(wp_json);
         const id = wp.ID;
         let key = ctx.stub.createCompositeKey('bmes', ['workplan', id]);
-        await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));
-        showMsg(`Work Plan ${id} ${wp} data is put into the mgmt legder`);
+        const wpJsonInLedger = await ctx.stub.getState(key);
+
+        if (!wpJsonInLedger || wpJsonInLedger.length === 0) {
+            showMsg(`Work Plan ${id} ${wp} data is put into the mgmt legder.`);
+        }
+        else {
+            showMsg(`Work Plan ${id} ${wp} data in the mgmt legder is updated.`);
+        }
+
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(wp)));        
     }
 
     async UpdateWorkPlan(ctx, wp_json) {
