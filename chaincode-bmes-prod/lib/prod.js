@@ -102,23 +102,32 @@ class BMES_PROD extends Contract {
             // loop to get transition ids to create work order terms
             // A work term is composed of transition id and its state
 
-            showMsg(`num of transition: ${array_transition.length}`);
-            for (let iter_transition = 0; iter_transition < array_transition.length; iter_transition++) {
-                showMsg(`\t\ttotal transiitions :${array_transition.length}, current index: ${iter_transition}`);
-                const obj_tran = array_transition[iter_transition];
-                //  showMsg(`\t\tobj_tran content: ${JSON.stringify(obj_tran, null, 4)}`);
-                // tran_id (ready)
-                const str_tran_id = obj_tran.ID;
 
-                // create work term with its key and state, and then commit these to ledger
-                showMsg("114 create work term with its key and state, and then commit these to ledger")
-                const wt_id = new WorkTermId(so_id, str_sales_term_id, str_tran_id);
-                const wt_id_info = wt_id.ToArray();
-                const key_wt = ctx.stub.createCompositeKey('bmes', wt_id_info);
-                const wt_state = new WorkTermState();
-                await ctx.stub.putState(key_wt, Buffer.from(JSON.stringify(wt_state)));
+            // 移除下面的loop，只需要產生預備執行的workterm就好，可節省帳本空間
 
-            }//end of array_transition loop                    
+            //showMsg(`num of transition: ${array_transition.length}`);
+            //for (let iter_transition = 0; iter_transition < array_transition.length; iter_transition++) {
+            //    showMsg(`\t\ttotal transiitions :${array_transition.length}, current index: ${iter_transition}`);
+            //    const obj_tran = array_transition[iter_transition];
+            //    //  showMsg(`\t\tobj_tran content: ${JSON.stringify(obj_tran, null, 4)}`);
+            //    // tran_id (ready)
+            //    const str_tran_id = obj_tran.ID;
+
+            //    // create work term with its key and state, and then commit these to ledger
+            //    showMsg("114 create work term with its key and state, and then commit these to ledger")
+            //    const wt_id = new WorkTermId(so_id, str_sales_term_id, str_tran_id);
+            //    const wt_id_info = wt_id.ToArray();
+            //    const key_wt = ctx.stub.createCompositeKey('bmes', wt_id_info);
+            //    const wt_state = new WorkTermState();
+            //    await ctx.stub.putState(key_wt, Buffer.from(JSON.stringify(wt_state)));
+            //}//end of array_transition loop     
+
+            const wt_id = new WorkTermId(so_id, str_sales_term_id, "init");
+            const wt_id_info = wt_id.ToArray();
+            const key_wt = ctx.stub.createCompositeKey('bmes', wt_id_info);
+            const wt_state = new WorkTermState();
+            await ctx.stub.putState(key_wt, Buffer.from(JSON.stringify(wt_state)));
+
         }//end of  obj_so.SalesTerms loop
         showMsg('============= END : StartSaleOrder =============');
     }
@@ -160,23 +169,16 @@ class BMES_PROD extends Contract {
         showMsg('============= END : PendSalesOrder =============');
     }
 
-    async CommitEngineeringChangeOrder(ctx, salesOrderId, salesTermId, newWorkPlanId) {
-        showMsg('============= START : CommitEngineeringChangeOrder =============');
-
-
-        showMsg('============= END : CommitEngineeringChangeOrder =============');
-    }
     
 
 
     async GetSaleOrderStateAtProd(ctx, so_id) {
         showMsg('============= START : GetSaleOrderStateAtProd =============');
-
         const so_key = await ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         const so_json = await ctx.stub.getState(so_key);
         showMsg(`so_json type: ${typeof (so_json)} \n  and value: ${JSON.stringify(so_json, null, 4)}`);
-        return so_json.toString();
         showMsg('============= END : GetSaleOrderStateAtProd =============');
+        return so_json.toString();
     }
 
     // when a carrier gets into a mahchine
@@ -426,12 +428,12 @@ class BMES_PROD extends Contract {
         let wo_state = Object.assign(new WorkOrderState, obj_wo_state);
         const work_plan_id = wo_state.ReferedWorkPlan;
 
-        const buffer_workpla_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', work_plan_id], 'channelmgmt');
-        if (buffer_workpla_response.status != 200) {
-            showMsg(JSON.stringify(buffer_workpla_response));
-            return JSON.stringify(buffer_workpla_response);
+        const buffer_workplan_response = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', work_plan_id], 'channelmgmt');
+        if (buffer_workplan_response.status != 200) {
+            showMsg(JSON.stringify(buffer_workplan_response));
+            return JSON.stringify(buffer_workplan_response);
         }
-        const work_plan = PromisePayloadToObject(buffer_workpla_response, "ChectOut-389");
+        const work_plan = PromisePayloadToObject(buffer_workplan_response, "ChectOut-389");
 
         //next state
         const next_tran_id = work_plan.TransitionList[curWorkTermId.Tran_id].OK_To;
@@ -474,6 +476,12 @@ class BMES_PROD extends Contract {
             nextWorkTermId.Tran_id = next_tran_id;
             showMsg(`nextWorkTermId type: ${typeof (nextWorkTermId)}  and value: ${JSON.stringify(nextWorkTermId, null, 4)}`);
 
+            // add workitem id
+            const nextWorkTermId_partialKey = nextWorkTermId.ToArray();
+            const key_nextWorkTerm = ctx.stub.createCompositeKey('bmes', nextWorkTermId_partialKey);
+            const state_nextWorkTerm = new WorkTermState();
+            await ctx.stub.putState(key_nextWorkTerm, Buffer.from(JSON.stringify(state_nextWorkTerm)));
+
             //update carrier state
             carrierState.CurrentWorkTermId = nextWorkTermId;
             await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
@@ -507,6 +515,75 @@ class BMES_PROD extends Contract {
         const res_obj  = BufferToObject(res, "GetWorkTermState");
         return JSON.stringify(res_obj);
         showMsg('============= END : GetWorkTermState =============');
+    }
+
+    async ApplyEngineeringChangeOrder(ctx, salesOrderId, salesTermId, newWorkPlanId) {
+        showMsg('============= START : ApplyEngineeringChangeOrder =============');
+
+        //get work order state corresponding to sales term
+        showMsg(`get work order state`);
+        const workOrderId = new WorkOrderId(salesOrderId, salesTermId);
+        const wo_partialkey = workOrderId.ToArray();
+        const wo_key = ctx.stub.createCompositeKey('bmes', wo_partialkey);
+        const wo_state_res = await ctx.stub.getState(wo_key);         
+        const wo_state_obj = BufferToObject(wo_state_res, "GetWorkOrderState");
+        let wo_state = Object.assign(new WorkOrderState(), wo_state_obj);
+
+        //get original work plan
+        const original_wp_id = wo_state.ReferedWorkPlan;
+        const buffer_original_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', original_wp_id], 'channelmgmt');
+        if (buffer_original_workplan_res.status != 200) {
+            showMsg(JSON.stringify(buffer_original_workplan_res));
+            return JSON.stringify(buffer_original_workplan_res);
+        }
+        const original_wp = PromisePayloadToObject(buffer_original_workplan_res, "");
+
+        //get new work plan
+        const buffer_new_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', newWorkPlanId], 'channelmgmt');
+        if (buffer_new_workplan_res.status != 200) {
+            showMsg(JSON.stringify(buffer_new_workplan_res));
+            return JSON.stringify(buffer_new_workplan_res);
+        }
+        const new_wp = PromisePayloadToObject(buffer_new_workplan_res, "");
+
+        // ==========  Rerounting ==========  
+        // iterate all work term states from "init"
+        // find the executed transitions, and then start to re-routing
+        showMsg('==========  Start: Rerounting in ApplyEngineeringChangeOrder ==========  ');
+        let iter_tranId = "init";
+        let is_rerouting = false; 
+        while (iter_tranId != "done") {
+
+            // check workterm of iter_tran
+            const workterm_iter_id = new WorkTermId(salesOrderId, salesTermId, iter_tranId);
+            const workterm_iter_partialkey = workterm_iter_id.ToArray();
+            const workterm_iter_key = ctx.stub.createCompositeKey('bmes', workterm_iter_partialkey);
+            let workterm_iter_state = await ctx.stub.getState(workterm_iter_key);
+            const start = workterm_iter_state.Start;
+            const end = workterm_iter_state.End;
+
+            if (start == "" && end == "") { //the work term is not be performed any more
+                is_rerouting = true;
+            }
+            else if (start != "" && end == "") {//the work term is processed but not end
+                //調整end
+                const newTransition = new_wp.TransitionList[iter_tranId]
+                workterm_iter_state.
+
+                is_rerouting = true;
+            }
+            else if (start != "" && end != "") {//the work term is done
+                // is_rerouting is still false and find the next
+
+            }
+            else {
+                console.error(`workterm state is incorrect: ${JSON.stringify(workterm_iter_id) }`)
+            }
+
+        }
+        showMsg('==========  End: Rerounting in ApplyEngineeringChangeOrder ==========  ');
+        showMsg('============= END : ApplyEngineeringChangeOrder =============');
+        retrun;
     }
 
     async TestClientCheck(ctx) {
