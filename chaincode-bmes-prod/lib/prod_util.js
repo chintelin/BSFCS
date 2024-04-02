@@ -27,7 +27,7 @@ class WorkOrderState {
     CurrentTransitionID = "0"; //first step is "init" and rework step is "rework" in default
     ReferedWorkPlan = "";
     BindingWithCarrier = null;
-    Condition = "Started";//Editing (not used) > Released > Started > Pending > End
+    Condition = "Started";//Editing (not used) > Released > Started > Pending > End > Restarted
     Start = "";  
     End = "";
     Tag = "";

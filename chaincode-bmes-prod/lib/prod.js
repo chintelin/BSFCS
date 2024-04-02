@@ -445,6 +445,7 @@ class BMES_PROD extends Contract {
             //update work order state
             wo_state.End = str_ISO8601_timestamp;
             wo_state.Condition = "End";
+            wo_state.CurrentTransitionID = "done";
             await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
 
             //free carrier
@@ -486,6 +487,10 @@ class BMES_PROD extends Contract {
             carrierState.CurrentWorkTermId = nextWorkTermId;
             await ctx.stub.putState(key_carrier, JSON.stringify(carrierState));
 
+            //update work order state
+            wo_state.CurrentTransitionID = next_tran_id;
+            await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
+
             let nextMachine = work_plan.TransitionList[next_tran_id].WorkStation;
             msg = new CheckOutMessage(nextMachine, `The transition is done. The next transition will be performed at WorkStation ${nextMachine}`);
         }
@@ -517,7 +522,7 @@ class BMES_PROD extends Contract {
         showMsg('============= END : GetWorkTermState =============');
     }
 
-    async ApplyEngineeringChangeOrder(ctx, salesOrderId, salesTermId, newWorkPlanId) {
+    async ApplyEngineeringChangeOrder(ctx, salesOrderId, salesTermId, newWorkPlanId, str_ISO8601_timestamp) {
         showMsg('============= START : ApplyEngineeringChangeOrder =============');
 
         //get work order state corresponding to sales term
@@ -528,59 +533,81 @@ class BMES_PROD extends Contract {
         const wo_state_res = await ctx.stub.getState(wo_key);         
         const wo_state_obj = BufferToObject(wo_state_res, "GetWorkOrderState");
         let wo_state = Object.assign(new WorkOrderState(), wo_state_obj);
+        const cur_wo_transition_id = wo_state.CurrentTransitionID;
 
-        //get original work plan
-        const original_wp_id = wo_state.ReferedWorkPlan;
-        const buffer_original_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', original_wp_id], 'channelmgmt');
-        if (buffer_original_workplan_res.status != 200) {
-            showMsg(JSON.stringify(buffer_original_workplan_res));
-            return JSON.stringify(buffer_original_workplan_res);
-        }
-        const original_wp = PromisePayloadToObject(buffer_original_workplan_res, "");
-
-        //get new work plan
-        const buffer_new_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', newWorkPlanId], 'channelmgmt');
-        if (buffer_new_workplan_res.status != 200) {
-            showMsg(JSON.stringify(buffer_new_workplan_res));
-            return JSON.stringify(buffer_new_workplan_res);
-        }
-        const new_wp = PromisePayloadToObject(buffer_new_workplan_res, "");
-
-        // ==========  Rerounting ==========  
-        // iterate all work term states from "init"
-        // find the executed transitions, and then start to re-routing
         showMsg('==========  Start: Rerounting in ApplyEngineeringChangeOrder ==========  ');
-        let iter_tranId = "init";
-        let is_rerouting = false; 
-        while (iter_tranId != "done") {
+
+        const updatedTag = `Referred Work plan is switched from ${original_wp_id} to ${newWorkPlanId} at ${str_ISO8601_timestamp}`;
+
+        if (cur_wo_transition_id != "done" || cur_wo_transition_id != "failed") {
 
             // check workterm of iter_tran
-            const workterm_iter_id = new WorkTermId(salesOrderId, salesTermId, iter_tranId);
-            const workterm_iter_partialkey = workterm_iter_id.ToArray();
-            const workterm_iter_key = ctx.stub.createCompositeKey('bmes', workterm_iter_partialkey);
-            let workterm_iter_state = await ctx.stub.getState(workterm_iter_key);
-            const start = workterm_iter_state.Start;
-            const end = workterm_iter_state.End;
+            const cur_workterm_id = new WorkTermId(salesOrderId, salesTermId, cur_wo_transition_id);
+            const cur_workterm_id_partialkey = cur_workterm_id.ToArray();
+            const cur_workterm_key = ctx.stub.createCompositeKey('bmes', cur_workterm_id_partialkey);
+            let cur_workterm_state_buf = await ctx.stub.getState(cur_workterm_key);
+            const cur_workterm_state_obj = BufferToObject(cur_workterm_state_buf, "GetWorkOrderState");
+            let cur_workterm_state = Object.assign(new WorkTermState(), cur_workterm_state_obj);
 
-            if (start == "" && end == "") { //the work term is not be performed any more
-                is_rerouting = true;
-            }
-            else if (start != "" && end == "") {//the work term is processed but not end
-                //調整end
-                const newTransition = new_wp.TransitionList[iter_tranId]
-                workterm_iter_state.
+            const start = cur_workterm_state.Start;
+            const end = cur_workterm_state.End;
 
-                is_rerouting = true;
-            }
-            else if (start != "" && end != "") {//the work term is done
-                // is_rerouting is still false and find the next
+            if (end == "") { //the work term is not be performed any more
+                //just switch to new workplan, and tag related information 
+                cur_workterm_state.Tag = updatedTag
+                await ctx.stub.putState(cur_workterm_key, Buffer.from(JSON.stringify(cur_workterm_state)));
+                showMsg('Work term state updated.');
 
+                wo_state.ReferedWorkPlan = newWorkPlanId;
+                wo_state.Tag = updatedTag
+                await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
+                showMsg('Work order state updated.');
             }
-            else {
-                console.error(`workterm state is incorrect: ${JSON.stringify(workterm_iter_id) }`)
-            }
-
         }
+        else if (cur_wo_transition_id == "done") {  
+            
+            //get original work plan
+            const original_wp_id = wo_state.ReferedWorkPlan;
+            const buffer_original_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', original_wp_id], 'channelmgmt');
+            if (buffer_original_workplan_res.status != 200) {
+                showMsg(JSON.stringify(buffer_original_workplan_res));
+                return JSON.stringify(buffer_original_workplan_res);
+            }
+            const original_wp = PromisePayloadToObject(buffer_original_workplan_res, "");
+
+            //search the last work term in the original work plan
+            let id_wt = "init";
+            let id_okTo = original_wp.TransitionList[id_wt].OK_To;
+            while (id_okTo != "done") {
+                id_wt = id_okTo;
+                id_okTo = original_wp.TransitionList[id_wt].OK_To;
+            }
+            const original_last_workterm_id = new WorkTermId(salesOrderId, salesTermId, id_wt);
+            const original_last_workterm_id_partialkey = original_last_workterm_id.ToArray();
+            const original_last_workterm_key = ctx.stub.createCompositeKey('bmes', original_last_workterm_id_partialkey);
+            let original_last_workterm_state_buf = await ctx.stub.getState(original_last_workterm_key);
+            const original_last_workterm_state_obj = BufferToObject(original_last_workterm_state_buf, "GetWorkOrderState");
+            let original_last_workterm_state = Object.assign(new WorkTermState(), original_last_workterm_state_obj);
+            original_last_workterm_state.Tag = updatedTag;
+            await ctx.stub.putState(original_last_workterm_key, Buffer.from(JSON.stringify(original_last_workterm_state)));
+            showMsg('The original work term state is updated.');
+
+            // Update the work order state to "rework"
+            wo_state.CurrentTransitionID = "rework";    
+            wo_state.ReferedWorkPlan = newWorkPlanId;
+            wo_state.Tag = updatedTag;
+
+            // If the work order state is "End", change it to "Pending"
+            if (wo_state.Condition === "End") {
+                wo_state.Condition = "Restarted";
+            }
+
+            // Save the updated work order state back to the ledger
+            await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
+            showMsg('Work order state updated to "rework" and condition to "Pending" if it was "End".');
+        } 
+
+
         showMsg('==========  End: Rerounting in ApplyEngineeringChangeOrder ==========  ');
         showMsg('============= END : ApplyEngineeringChangeOrder =============');
         retrun;
