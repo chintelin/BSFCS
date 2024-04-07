@@ -19,7 +19,7 @@ class BMES_PROD extends Contract {
         showMsg('============= START : InitCarrier =============');
         // carrier doc is designed to hold TransitionInfo 
         const carrierState = new CarrierState('free', null);
-        for (let i = 1; i <= 10; i++) {
+        for (let i = 1; i <= 3; i++) {
             let key = ctx.stub.createCompositeKey('bmes', ['carrier', i.toString()]);
             await ctx.stub.putState(key, JSON.stringify(carrierState));
             //  showMsg(`Generate carrier doc # ${i}`);          
@@ -168,7 +168,42 @@ class BMES_PROD extends Contract {
 
         showMsg('============= END : PendSalesOrder =============');
     }
+    async RestartSalesOrder(ctx, so_id) {
+        showMsg('============= START : ReStartSalesOrder =============');
 
+        // 檢查銷售訂單是否存在
+        const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
+        const so_json = await ctx.stub.getState(so_key);
+        if (!so_json || so_json.length === 0) {
+            throw new Error(`The sales order ${so_id} does not exist`);
+        }
+
+        // 將銷售訂單的狀態設置為'Pending'
+        let so_state = JSON.parse(so_json.toString());
+        so_state.Condition = "Started";
+
+        // 更新銷售訂單的狀態到分布式账本
+        await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so_state)));
+
+        // 檢查所有相關的工作訂單並將其狀態設置為'Pending'
+        const iterator = await ctx.stub.getStateByPartialCompositeKey('bmes', ['workorder']);
+        let result = await iterator.next();
+        while (!result.done) {
+            const wo_key = result.value.key;
+            const splited_wo_key = ctx.stub.splitCompositeKey(wo_key);
+            const wo_json = result.value.value.toString();
+            let wo_state = JSON.parse(wo_json);
+            showMsg(`wo_state type: ${typeof (wo_state)} \n  and value: ${JSON.stringify(wo_state, null, 4)}`);
+            if (splited_wo_key.attributes[1] == so_id) {
+                wo_state.Condition = "Started";
+                await ctx.stub.putState(wo_key, Buffer.from(JSON.stringify(wo_state)));
+                showMsg(`wo_state.Condition is changed to "Pending"`);
+            }
+            result = await iterator.next();
+        }
+
+        showMsg('============= END : ReStartSalesOrder =============');
+    }
     
 
 
@@ -533,10 +568,11 @@ class BMES_PROD extends Contract {
         const wo_state_res = await ctx.stub.getState(wo_key);         
         const wo_state_obj = BufferToObject(wo_state_res, "GetWorkOrderState");
         let wo_state = Object.assign(new WorkOrderState(), wo_state_obj);
+        showMsg(`wo_state type: ${typeof (wo_state)} and value: ${JSON.stringify(wo_state, null, 4)}`);
         const cur_wo_transition_id = wo_state.CurrentTransitionID;
 
         showMsg('==========  Start: Rerounting in ApplyEngineeringChangeOrder ==========  ');
-
+        const original_wp_id = wo_state.ReferedWorkPlan;
         const updatedTag = `Referred Work plan is switched from ${original_wp_id} to ${newWorkPlanId} at ${str_ISO8601_timestamp}`;
 
         if (cur_wo_transition_id != "done" || cur_wo_transition_id != "failed") {
@@ -567,7 +603,7 @@ class BMES_PROD extends Contract {
         else if (cur_wo_transition_id == "done") {  
             
             //get original work plan
-            const original_wp_id = wo_state.ReferedWorkPlan;
+
             const buffer_original_workplan_res = await ctx.stub.invokeChaincode('bmes-mgmt', ['GetWorkPlan', original_wp_id], 'channelmgmt');
             if (buffer_original_workplan_res.status != 200) {
                 showMsg(JSON.stringify(buffer_original_workplan_res));
@@ -610,7 +646,7 @@ class BMES_PROD extends Contract {
 
         showMsg('==========  End: Rerounting in ApplyEngineeringChangeOrder ==========  ');
         showMsg('============= END : ApplyEngineeringChangeOrder =============');
-        retrun;
+        return;
     }
 
     async TestClientCheck(ctx) {

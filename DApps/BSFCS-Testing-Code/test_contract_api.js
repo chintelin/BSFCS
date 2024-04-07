@@ -326,6 +326,10 @@ async function main() {
 				console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
 			}
 
+			console.log('\n--> Submit Transaction: GetSalesOrderState with id=1000. ....');
+			result = await contractMgmt.submitTransaction('GetSalesOrderState', '1000');
+			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+
 			console.log('\n--> Submit PROD Transaction: GetAllObject....');
 			result = await contractProd.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;

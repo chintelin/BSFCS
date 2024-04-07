@@ -70,6 +70,7 @@ class SalesOrderState {
     Release = "";
     Start = "";
     End = "";
+    Tag = "";
 }
 
 //message to apps
