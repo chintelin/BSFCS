@@ -145,7 +145,8 @@ async function GetAllWP() {
 }
 
 async function GetWP(id) {
-	let result = await contract.submitTransaction('GetWorkPlan', id).toString();
+	const result = await contract.submitTransaction('GetWorkPlan', id);
+	return result.toString();
 }
 
 //async function PostWP(wp_json) {

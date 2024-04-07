@@ -1,0 +1,88 @@
+{
+	"info": {
+		"_postman_id": "c3008795-38d0-4959-be36-888b30496272",
+		"name": "BSFCS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34118956"
+	},
+	"item": [
+		{
+			"name": "/GetAllWorkStation",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "/GetWP",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "/GetAllWP",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "/PostWorkStation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"Name\":\"ASRS2\",\"Function\":\"Store, Retrive\",\"Parameters\":\"\",\"Endpoint\":\"opc.tcp://172.21.3.100:4840\",\"Protocol\":\"OPC UA\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/PostWorkStation",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"PostWorkStation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/UpdateWorkStation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"Name\":\"ASRS2\",\"Function\":\"Store, Retrive\",\"Parameters\":\"\",\"Endpoint\":\"opc.tcp://172.21.3.100:4840\",\"Protocol\":\"OPC UA\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/PostWorkStation",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"PostWorkStation"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -33,9 +33,15 @@ router.put('/UpdateWorkStation', async function (req, res) {
 
 
 router.get('/GetWP', async function (req, res) {
-    let id = req.body.ID.toString();
-    let result = await client.GetWP(id);
-    res.end(result)
+    try {
+        let id = req.query.ID.toString();
+        let result = await client.GetWP(id);
+        res.end(result)
+    }
+    catch (ex) {
+        res.end(ex.toString());
+    }
+    
 });
 router.get('/GetAllWP', async function (req, res) {
     let result = await client.GetAllWP();
