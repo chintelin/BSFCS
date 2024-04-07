@@ -442,7 +442,6 @@ class BMES_MGMT extends Contract {
             throw new Error(`The State of Sales Order ${so_id} does not exist`);
         }
         let so_state = Object.assign(new SalesOrderState(), obj_so_state);
-
         
         if (so_state.Condition == "Released")// only in released condition, so can be updated.
         {

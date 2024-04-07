@@ -196,11 +196,12 @@ exports.UpdateWorkStation = UpdateWorkStation;
 
 exports.GetAllWP = GetAllWP;
 exports.UpdateWP = UpdateWP;
+exports.GetWP = GetWP;
 
 
 exports.GetAllSO = GetAllSO;
-//exports.GetSO = GetSO;
-//exports.PostSO = PostSO;
+exports.GetSO = GetSO;
+exports.GetSOState = GetSOState;
 exports.UpdateSO = UpdateSO;
 
 exports.GetAllObject = GetAllObject;
