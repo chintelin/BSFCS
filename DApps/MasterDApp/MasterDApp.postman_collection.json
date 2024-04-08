@@ -7,31 +7,241 @@
 	},
 	"item": [
 		{
-			"name": "/GetAllWorkStation",
+			"name": "GetAllWorkStation",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllWorkStation",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllWorkStation"
+					]
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "/GetWP",
+			"name": "GetAllObjectFromMgmt",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllObjectFromMgmt",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllObjectFromMgmt"
+					]
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "/GetAllWP",
+			"name": "GetAllObjectFromProd",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllObjectFromProd",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllObjectFromProd"
+					]
+				}
 			},
 			"response": []
 		},
 		{
-			"name": "/PostWorkStation",
+			"name": "GetWP",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetWP?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetWP"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetSO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetSO?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetSO"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "StartSO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/StartSO?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"StartSO"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PendSO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/PendSO?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"PendSO"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RestartSO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/RestartSO?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"RestartSO"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetSOState",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetSOState?ID=1000",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetSOState"
+					],
+					"query": [
+						{
+							"key": "ID",
+							"value": "1000"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetAllWP",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllWP",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllWP"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetAllSO",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllSO",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllSO"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PostWorkStation",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -58,9 +268,36 @@
 			"response": []
 		},
 		{
-			"name": "/UpdateWorkStation",
+			"name": "ApplyEngineeringChangeOrder",
 			"request": {
 				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"salesOrder\":\"1000\", \"salesTerm\":\"1\", \"newWorkPlan\":\"1001\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/ApplyEngineeringChangeOrder",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"ApplyEngineeringChangeOrder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateWorkStation",
+			"request": {
+				"method": "PUT",
 				"header": [],
 				"body": {
 					"mode": "raw",
@@ -79,6 +316,60 @@
 					"port": "1337",
 					"path": [
 						"PostWorkStation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateWP",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"ID\":\"1001\",\"TransitionList\":{\"20\":{\"ID\":\"20\",\"WorkStation\":\"Magazine\",\"Function\":\"0\",\"Parameter\":\"0\",\"OK_To\":\"31\"},\"30\":{\"ID\":\"30\",\"WorkStation\":\"Press\",\"Function\":\"25\",\"Parameter\":\"5\",\"OK_To\":\"31\"},\"31\":{\"ID\":\"31\",\"WorkStation\":\"Press\",\"Function\":\"35\",\"Parameter\":\"5\",\"OK_To\":\"41\"},\"40\":{\"ID\":\"40\",\"WorkStation\":\"ASRS\",\"Function\":\"1\",\"Parameter\":\"1210\",\"OK_To\":\"done\"},\"41\":{\"ID\":\"41\",\"WorkStation\":\"ASRS\",\"Function\":\"1\",\"Parameter\":\"1211\",\"OK_To\":\"done\"},\"init\":{\"ID\":\"init\",\"WorkStation\":\"ASRS\",\"Function\":\"2\",\"Parameter\":\"210\",\"OK_To\":\"20\"},\"re\":{\"ID\":\"re\",\"WorkStation\":\"ASRS\",\"Function\":\"2\",\"Parameter\":\"1210\",\"OK_To\":\"31\"}} }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/UpdateWP",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"UpdateWP"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateSO",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"ID\":\"1001\",\"SalesTerms\":{\"1\":{\"ID\":\"1\",\"ProductName\":\"Product 1000\",\"RefWorkPlan\":\"1000\"},\"2\":{\"ID\":\"2\",\"ProductName\":\"Product 1000\",\"RefWorkPlan\":\"1000\"}}}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/UpdateSO",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"UpdateSO"
 					]
 				}
 			},

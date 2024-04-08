@@ -265,13 +265,17 @@ class BMES_MGMT extends Contract {
         let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
 
         //find state by the composite_key
-        let so_json = await ctx.stub.getState(key);
+        let so_buf = await ctx.stub.getState(key);
 
         //check whether workplan exist or not
-        if (!so_json || so_json.length === 0) {
+        if (!so_buf || so_buf.length === 0) {
             throw new Error(`The SalesOrder ${so_id} does not exist`);
         }
-        showMsg(`so_json type: ${typeof(so_json)} and value: ${JSON.stringify(so_json, null, 4)}`); 
+        //showMsg(`so_buf type: ${typeof (so_buf)} and value: ${JSON.stringify(so_buf, null, 4)}`); 
+
+        const so = BufferToObject(so_buf, "so_but to object");
+        const so_json = JSON.stringify(so);
+        showMsg(`so_json type: ${typeof (so_json)} and value: ${JSON.stringify(so_json, null, 4)}`); 
 
         showMsg(`*****  END: GetSalesOrder *****`)
         //return information
@@ -432,7 +436,7 @@ class BMES_MGMT extends Contract {
         const so_id = so.ID;
 
         //update so state
-        await GetSalesOrderState(ctx, id);
+        await this.GetSalesOrderState(ctx, so_id);
 
         //Check sales order state
         let so_state_key = ctx.stub.createCompositeKey('bmes', ['salesorderstate', so_id]);
@@ -487,7 +491,7 @@ class BMES_MGMT extends Contract {
 
         showMsg(`*****  END: ApplyEngineeringChangeOrder *****`)
         //return information
-        return so_buf.toString();
+        return  "ECO is done";
     }
 
     async getHistory(ctx, id) {

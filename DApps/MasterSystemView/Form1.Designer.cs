@@ -422,15 +422,15 @@
             txtSelectedSoId.Location = new Point(125, 0);
             txtSelectedSoId.Multiline = true;
             txtSelectedSoId.Name = "txtSelectedSoId";
-            txtSelectedSoId.Size = new Size(115, 46);
+            txtSelectedSoId.Size = new Size(66, 46);
             txtSelectedSoId.TabIndex = 5;
             // 
             // btnAddTerm
             // 
             btnAddTerm.Dock = DockStyle.Right;
-            btnAddTerm.Location = new Point(240, 0);
+            btnAddTerm.Location = new Point(191, 0);
             btnAddTerm.Name = "btnAddTerm";
-            btnAddTerm.Size = new Size(90, 46);
+            btnAddTerm.Size = new Size(64, 46);
             btnAddTerm.TabIndex = 0;
             btnAddTerm.Text = "Add Term";
             btnAddTerm.UseVisualStyleBackColor = true;
@@ -439,32 +439,32 @@
             // btnDeleteTerm
             // 
             btnDeleteTerm.Dock = DockStyle.Right;
-            btnDeleteTerm.Location = new Point(330, 0);
+            btnDeleteTerm.Location = new Point(255, 0);
             btnDeleteTerm.Name = "btnDeleteTerm";
-            btnDeleteTerm.Size = new Size(85, 46);
+            btnDeleteTerm.Size = new Size(116, 46);
             btnDeleteTerm.TabIndex = 1;
-            btnDeleteTerm.Text = "Delete Transition";
+            btnDeleteTerm.Text = "Delete selected term";
             btnDeleteTerm.UseVisualStyleBackColor = true;
             // 
             // btnModifyTerm
             // 
             btnModifyTerm.Dock = DockStyle.Right;
-            btnModifyTerm.Location = new Point(415, 0);
+            btnModifyTerm.Location = new Point(371, 0);
             btnModifyTerm.Name = "btnModifyTerm";
-            btnModifyTerm.Size = new Size(85, 46);
+            btnModifyTerm.Size = new Size(115, 46);
             btnModifyTerm.TabIndex = 2;
-            btnModifyTerm.Text = "Modify Transition";
+            btnModifyTerm.Text = "Modify selected term";
             btnModifyTerm.UseVisualStyleBackColor = true;
             btnModifyTerm.Click += btnModifyTerm_Click;
             // 
             // btnCloneTerm
             // 
             btnCloneTerm.Dock = DockStyle.Right;
-            btnCloneTerm.Location = new Point(500, 0);
+            btnCloneTerm.Location = new Point(486, 0);
             btnCloneTerm.Name = "btnCloneTerm";
-            btnCloneTerm.Size = new Size(92, 46);
+            btnCloneTerm.Size = new Size(106, 46);
             btnCloneTerm.TabIndex = 3;
-            btnCloneTerm.Text = "Clone Transition";
+            btnCloneTerm.Text = "Clone selected term";
             btnCloneTerm.UseVisualStyleBackColor = true;
             // 
             // textBox2

@@ -10,56 +10,76 @@ const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('./../lib/
 const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('./../lib/AppUtil.js');
 const channelMgmtName = 'channelmgmt';
 const chaincodeMgmtName = 'bmes-mgmt';
+const channelProdName = 'channelprod';
+const chaincodeProdName = 'bmes-prod';
 const mspOrg1 = 'Org1MSP';
 const mspOrg2 = 'Org2MSP';//<--�o�W�٭n���T
 
 const ext_mgmt_id = Math.floor(Math.random() * 100000);
 const walletMgmtPath = path.join(__dirname, 'wallet_' + ext_mgmt_id);
 const org1UserId = 'appUserMgnt' + ext_mgmt_id;
+const ext_prod_id = Math.floor(Math.random() * 100000 + 100000);
+const walletProdPath = path.join(__dirname, 'wallet_' + ext_prod_id);
+const org2UserId = 'appUserProd' + ext_prod_id;
 
 const RED = '\x1b[31m\n';
 const GREEN = '\x1b[32m\n';
 const BLUE = '\x1b[34m';
 const RESET = '\x1b[0m';
 
-var ccp = null;
-var caClient = null;
-var wallet = null;
-var gateway = null;
-var network = null;
-var contract = null;
+var ccpMgmt = null;
+var caClientMgmt = null;
+var walletMgmt = null;
+var gatewayMgmt = null;
+var networkMgmt = null;
+var contractMgmt = null;
+
+var ccpProd = null;
+var caClientProd = null;
+var walletProd = null;
+var gatewayProd = null;
+var networkProd = null;
+var contractProd = null;
 
 function prettyJSONString(inputString) {
 	return JSON.stringify(JSON.parse(inputString), null, 2);
 }
 
-
-
-async function StartMgmt() {
+async function StartConnectingToHlfNetwork() {
 	try {
-		// build an in memory object with the network configuration (also known as a connection profile)
-		ccp = buildCCPOrg1();
-		// build an instance of the fabric ca services client based on the information in the network configuration
-		caClient = buildCAClient(FabricCAServices, ccp, 'ca.org1.example.com');
-		// setup the wallet to hold the credentials of the application user
-		wallet = await buildWallet(Wallets, walletMgmtPath);
-		// in a real application this would be done on an administrative flow, and only once
-		await enrollAdmin(caClient, wallet, mspOrg1);
-		// in a real application this would be done only when a new user was required to be added and would be part of an administrative flow
-		await registerAndEnrollUser(caClient, wallet, mspOrg1, org1UserId, 'org1.department1');
-		gateway = new Gateway();
+		ccpMgmt = buildCCPOrg1();
+		caClientMgmt = buildCAClient(FabricCAServices, ccpMgmt, 'ca.org1.example.com');
+		walletMgmt = await buildWallet(Wallets, walletMgmtPath);
+		await enrollAdmin(caClientMgmt, walletMgmt, mspOrg1);
+		await registerAndEnrollUser(caClientMgmt, walletMgmt, mspOrg1, org1UserId, 'org1.department1');
+		gatewayMgmt = new Gateway();
+
+		ccpProd = buildCCPOrg2();
+		caClientProd = buildCAClient(FabricCAServices, ccpProd, 'ca.org2.example.com');
+		walletProd = await buildWallet(Wallets, walletProdPath);
+		await enrollAdmin(caClientProd, walletProd, mspOrg2);
+		await registerAndEnrollUser(caClientProd, walletProd, mspOrg2, org2UserId, 'org2.department1');
+		gatewayProd = new Gateway();
 
 		let oldnum = "0";
 		//while (true) {
 			try {
 
-				await gateway.connect(ccp, {
-					wallet: wallet,
+				await gatewayMgmt.connect(ccpMgmt, {
+					wallet: walletMgmt,
 					identity: org1UserId,
-					discovery: { enabled: true, asLocalhost: true } // using asLocalhost as this gateway is using a fabric network deployed locally
+					discovery: { enabled: true, asLocalhost: true } 
 				});
-				network = await gateway.getNetwork(channelMgmtName);
-				contract = network.getContract(chaincodeMgmtName);
+				networkMgmt = await gatewayMgmt.getNetwork(channelMgmtName);
+				contractMgmt = networkMgmt.getContract(chaincodeMgmtName);
+
+				await gatewayProd.connect(ccpProd, {
+					wallet: walletProd,
+					identity: org2UserId,
+					discovery: { enabled: true, asLocalhost: true } 
+				});
+				networkProd = await gatewayProd.getNetwork(channelProdName);
+				contractProd = networkProd.getContract(chaincodeProdName);
 
 				let result;
 				//  --- Chaincode Event --- INIT ----
@@ -84,9 +104,9 @@ async function StartMgmt() {
 						console.log(oldnum)
 					}
 				}
-				await contract.addContractListener(listenner);
+				await contractMgmt.addContractListener(listenner);
 				//  --- Chaincode Event --- END ----
-				await contract.evaluateTransaction('InitWorkStationDoc');
+				await contractMgmt.evaluateTransaction('InitWorkStationDoc');
 
 			} finally {
 				// Disconnect from the gateway when the application is closing
@@ -104,7 +124,7 @@ async function StartMgmt() {
 
 async function GetAllWorkStation() {
 	//console.log('\n-------> Submit Transaction: GetAllMachine....');
-	let resultBuf = await contract.evaluateTransaction('GetAllWorkStation');
+	let resultBuf = await contractMgmt.evaluateTransaction('GetAllWorkStation');
 	let resultStr = resultBuf.toString();
 	//console.log(`*** Result: ${resultStr}`);
 	return resultStr;
@@ -123,7 +143,8 @@ async function PostWorkStation(machine_jsObj) {
 	let ednpoint  = machine_jsObj.Endpoint.toString();
 	let protocol = machine_jsObj.Protocol.toString();
 
-	await contract.submitTransaction('PostWorkStation', name, func, parameters, ednpoint, protocol);
+	const result = await contractMgmt.submitTransaction('PostWorkStation', name, func, parameters, ednpoint, protocol);
+	return result.toString();
 }
 
 async function UpdateWorkStation(machine_jsObj) {
@@ -134,18 +155,19 @@ async function UpdateWorkStation(machine_jsObj) {
 	let ednpoint = machine_jsObj.Endpoint.toString();
 	let protocol = machine_jsObj.Protocol.toString();
 
-	await contract.submitTransaction('UpdateWorkStation', name, func, parameters, ednpoint, protocol);
+	const result = await contractMgmt.submitTransaction('UpdateWorkStation', name, func, parameters, ednpoint, protocol);
+	return result.toString();
 }
 
 
 async function GetAllWP() {
-	let result = await contract.evaluateTransaction('GetAllWorkPlan');
+	let result = await contractMgmt.evaluateTransaction('GetAllWorkPlan');
 	let resultStr = result.toString();
 	return resultStr;
 }
 
 async function GetWP(id) {
-	const result = await contract.submitTransaction('GetWorkPlan', id);
+	const result = await contractMgmt.submitTransaction('GetWorkPlan', id);
 	return result.toString();
 }
 
@@ -154,43 +176,79 @@ async function GetWP(id) {
 //}
 
 async function UpdateWP(wp_json) {
-
-	await contract.submitTransaction('UpdateWorkPlan', wp_json);
+	const result = await contractMgmt.submitTransaction('UpdateWorkPlan', wp_json);
+	return result.toString();
 }
 
 
-
 async function GetAllSO() {
-	let result = await contract.evaluateTransaction('GetAllOrder');
+	let result = await contractMgmt.evaluateTransaction('GetAllOrder');
 	let resultStr = result.toString();
 	return resultStr;
 }
 
 async function GetSO(id) {
-	let result = await contract.submitTransaction('GetSalesOrder', id).toString();
+	let result = await contractMgmt.submitTransaction('GetSalesOrder', id);
+	return result.toString();
 }
 
 async function GetSOState(id) {
-	let result = await contract.submitTransaction('GetSalesOrderState', id).toString();
+	let result = await contractMgmt.submitTransaction('GetSalesOrderState', id);
+	return result.toString();
 }
+
+async function StartSO(id) {
+	let dt = new Date(Date.now());
+	let result = await contractProd.submitTransaction('StartSaleOrder', id, dt.toISOString());
+	return result.toString();
+}
+async function PendSO(id) {
+	let result = await contractProd.submitTransaction('PendSalesOrder', id);
+	return result.toString();
+}
+async function RestartSO(id) {
+	let dt = new Date(Date.now());
+	let result = await contractProd.submitTransaction('RestartSalesOrder', id);
+	return result.toString();
+}
+
 
 //async function PostSO(so_json) {
 //	await contract.submitTransaction('PostOrder', so_json);
 //}
 
 async function UpdateSO(so_json) {
-	await contract.submitTransaction('UpdateSalesOrder', so_json);
+	const res = await contractMgmt.submitTransaction('UpdateSalesOrder', so_json);
+	return res.toString();
 }
 
 
-async function GetAllObject() {
-	let result = await contract.evaluateTransaction('GetAllObject');
+async function ApplyEngineeringChangeOrderToMgmt(salesOrderId, salesTermId, newWorkPlanId) {
+	let dt = new Date(Date.now());
+	const res = await contractMgmt.submitTransaction('ApplyEngineeringChangeOrder', salesOrderId, salesTermId, newWorkPlanId, dt.toISOString());
+	return res.toString();
+}
+
+async function ApplyEngineeringChangeOrderToProd(salesOrderId, salesTermId, newWorkPlanId) {
+	let dt = new Date(Date.now());
+	const res = await contractProd.submitTransaction('ApplyEngineeringChangeOrder', salesOrderId, salesTermId, newWorkPlanId, dt.toISOString());
+	return res.toString();
+}
+
+async function GetAllObjectFromMgmt() {
+	let result = await contractMgmt.evaluateTransaction('GetAllObject');
+	let resultStr = result.toString();
+	return resultStr;
+}
+
+async function GetAllObjectFromProd() {
+	let result = await contractProd.evaluateTransaction('GetAllObject');
 	let resultStr = result.toString();
 	return resultStr;
 }
 
 
-StartMgmt();
+StartConnectingToHlfNetwork();
 exports.GetAllWorkStation = GetAllWorkStation;
 exports.PostWorkStation = PostWorkStation;
 exports.UpdateWorkStation = UpdateWorkStation;
@@ -199,12 +257,19 @@ exports.GetAllWP = GetAllWP;
 exports.UpdateWP = UpdateWP;
 exports.GetWP = GetWP;
 
-
 exports.GetAllSO = GetAllSO;
 exports.GetSO = GetSO;
 exports.GetSOState = GetSOState;
 exports.UpdateSO = UpdateSO;
 
-exports.GetAllObject = GetAllObject;
+exports.StartSO = StartSO;
+exports.PendSO = PendSO;
+exports.RestartSO = RestartSO;
+
+exports.GetAllObjectFromProd = GetAllObjectFromProd;
+exports.ApplyEngineeringChangeOrderToProd = ApplyEngineeringChangeOrderToProd;
+
+exports.GetAllObjectFromMgmt = GetAllObjectFromMgmt;
+exports.ApplyEngineeringChangeOrderToMgmt = ApplyEngineeringChangeOrderToMgmt;
 
 

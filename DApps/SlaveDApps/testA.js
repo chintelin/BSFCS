@@ -43,27 +43,21 @@ async function main() {
         contractMgmt = res.mgmt;
         console.info(`contract interfaces are OK`);
 
-        //console.log('\n--> Submit Transaction: InitMachineDoc, function creates the initial set of assets on the ledger');
-        //await contractMgmt.submitTransaction('InitMachineDoc');
-        //console.log('\n-------> Submit Transaction: GetAllMachine....');
-        //result = await contractMgmt.evaluateTransaction('GetAllMachine');
+        //let result = "";
+        //console.log('\n--> Submit Transaction: InitWorkPlanDoc, function creates the initial set of assets on the ledger');
+        //await contractMgmt.submitTransaction('InitWorkPlanDoc');
+        //console.log('\n--> Submit Transaction: GetWorkPlan....');
+        //result = await contractMgmt.submitTransaction('GetWorkPlan', '1000');
         //console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
+        //console.log('\n--> Submit Transaction: InitSalesOrderDoc, function creates the initial set of assets on the ledger');
+        //await contractMgmt.submitTransaction('InitSalesOrderDoc');
 
-        let result = "";
-        console.log('\n--> Submit Transaction: InitWorkPlanDoc, function creates the initial set of assets on the ledger');
-        await contractMgmt.submitTransaction('InitWorkPlanDoc');
-        console.log('\n--> Submit Transaction: GetWorkPlan....');
-        result = await contractMgmt.submitTransaction('GetWorkPlan', '1000');
-        console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
-        console.log('\n--> Submit Transaction: InitSalesOrderDoc, function creates the initial set of assets on the ledger');
-        await contractMgmt.submitTransaction('InitSalesOrderDoc');
+        //console.log('\n--> Submit Transaction: InitCarrier....');
+        //result = await contractProd.submitTransaction('InitCarrier');
+        //console.log('\n--> Submit Transaction: StartSaleOrder....');
+        //result = await contractProd.submitTransaction('StartSaleOrder', '1000');
 
-        console.log('\n--> Submit Transaction: InitCarrier....');
-        result = await contractProd.submitTransaction('InitCarrier');
-        console.log('\n--> Submit Transaction: StartSaleOrder....');
-        result = await contractProd.submitTransaction('StartSaleOrder', '1000');
-
-        console.log('BMES is initialized');
+        //console.log('BMES is initialized');
     }
 
     if (process.argv[2]) {

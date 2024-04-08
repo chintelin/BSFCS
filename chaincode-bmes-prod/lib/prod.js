@@ -130,6 +130,7 @@ class BMES_PROD extends Contract {
 
         }//end of  obj_so.SalesTerms loop
         showMsg('============= END : StartSaleOrder =============');
+        return `Sales order ${so_id} is started!`;
     }
 
     async PendSalesOrder(ctx, so_id) {
@@ -139,7 +140,8 @@ class BMES_PROD extends Contract {
         const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         const so_json = await ctx.stub.getState(so_key);
         if (!so_json || so_json.length === 0) {
-            throw new Error(`The sales order ${so_id} does not exist`);
+            //throw new Error(`The sales order ${so_id} does not exist`);
+            return `The sales order ${so_id} does not exist`;
         }
 
         // 將銷售訂單的狀態設置為'Pending'
@@ -167,6 +169,7 @@ class BMES_PROD extends Contract {
         }
 
         showMsg('============= END : PendSalesOrder =============');
+        return `The sales order ${so_id} is pended.`;
     }
     async RestartSalesOrder(ctx, so_id) {
         showMsg('============= START : ReStartSalesOrder =============');
@@ -175,7 +178,8 @@ class BMES_PROD extends Contract {
         const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         const so_json = await ctx.stub.getState(so_key);
         if (!so_json || so_json.length === 0) {
-            throw new Error(`The sales order ${so_id} does not exist`);
+            //throw new Error(`The sales order ${so_id} does not exist`);
+            return `The sales order ${so_id} does not exist`;
         }
 
         // 將銷售訂單的狀態設置為'Pending'
@@ -203,6 +207,7 @@ class BMES_PROD extends Contract {
         }
 
         showMsg('============= END : ReStartSalesOrder =============');
+        return `The sales order ${so_id} is restarted.`;
     }
     
 
@@ -646,7 +651,7 @@ class BMES_PROD extends Contract {
 
         showMsg('==========  End: Rerounting in ApplyEngineeringChangeOrder ==========  ');
         showMsg('============= END : ApplyEngineeringChangeOrder =============');
-        return;
+        return "ECO is done";
     }
 
     async TestClientCheck(ctx) {
