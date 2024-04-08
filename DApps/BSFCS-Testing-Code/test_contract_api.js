@@ -380,7 +380,3 @@ function deleteFolder(folderPath) {
 
 main();
 
-// 程式碼執行結束後刪除名稱符合 "wallet" 開頭的資料夾
-process.on('exit', () => {
-    deleteWalletFolders(workDirPath);
-});

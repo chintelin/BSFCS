@@ -25,7 +25,8 @@ namespace MasterSystemView
         internal SalesOrderContainer SalesOrderContainer { get; set; } = new SalesOrderContainer();
         internal string selectedSOId { get; set; } = string.Empty;
 
-        internal LedgerContainer LedgerContainer { get; set; } = new LedgerContainer();
+        internal LedgerContainer MgmtLedgerContainer { get; set; } = new LedgerContainer();
+        internal LedgerContainer ProdLedgerContainer { get; set; } = new LedgerContainer();
         #endregion
 
         public Form1()
@@ -42,8 +43,8 @@ namespace MasterSystemView
         {
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.FetchAllWorkStationAsync(this.WorkStationContainer);
-                await InterfacesToMasterDApp.FetchAllWorkPlanAsync(this.WorkPlanContainer);
+                await InterfacesToMasterDApp.GetAllWorkStationAsync(this.WorkStationContainer);
+                await InterfacesToMasterDApp.GetAllWorkPlanAsync(this.WorkPlanContainer);
             });
             timer1.Start();
         }
@@ -93,16 +94,27 @@ namespace MasterSystemView
                 dataGridView_SalesOrder.Refresh();
             }
 
-            if (LedgerContainer.IsUpdated)
+            if (MgmtLedgerContainer.IsUpdated)
             {
-                LedgerContainer.IsUpdated = false;
-                string jsonString = LedgerContainer.Json;
+                MgmtLedgerContainer.IsUpdated = false;
+                string jsonString = MgmtLedgerContainer.Json;
                 // 使用JToken.Parse方法將字符串解析為JSON數據結構
                 JToken jsonToken = JToken.Parse(jsonString);
 
                 // 使用JsonConvert.SerializeObject方法來美化JSON內容
                 string beautifiedJsonString = JsonConvert.SerializeObject(jsonToken, Formatting.Indented);
-                rtxt_ledger.Text = beautifiedJsonString;
+                rtxt_Mgmtledger.Text = beautifiedJsonString;
+            }
+            if (ProdLedgerContainer.IsUpdated)
+            {
+                ProdLedgerContainer.IsUpdated = false;
+                string jsonString = ProdLedgerContainer.Json;
+                // 使用JToken.Parse方法將字符串解析為JSON數據結構
+                JToken jsonToken = JToken.Parse(jsonString);
+
+                // 使用JsonConvert.SerializeObject方法來美化JSON內容
+                string beautifiedJsonString = JsonConvert.SerializeObject(jsonToken, Formatting.Indented);
+                rtxt_ProdLedger.Text = beautifiedJsonString;
             }
             timer1.Start();
         }
@@ -122,8 +134,8 @@ namespace MasterSystemView
 
                 Task.Run(async () =>
                 {
-                    await InterfacesToMasterDApp.AddWorkStationAsync(this.WorkStationContainer, newWorkStation);
-                    await InterfacesToMasterDApp.FetchAllWorkStationAsync(this.WorkStationContainer);
+                    await InterfacesToMasterDApp.PostWorkStationAsync(this.WorkStationContainer, newWorkStation);
+                    await InterfacesToMasterDApp.GetAllWorkStationAsync(this.WorkStationContainer);
                 });
             }
         }
@@ -151,7 +163,7 @@ namespace MasterSystemView
                 Task.Run(async () =>
                 {
                     await InterfacesToMasterDApp.UpdateWorkStationAsync(this.WorkStationContainer, selectedIndex, updateInfo);
-                    await InterfacesToMasterDApp.FetchAllWorkStationAsync(this.WorkStationContainer);
+                    await InterfacesToMasterDApp.GetAllWorkStationAsync(this.WorkStationContainer);
                 });
             }
         }
@@ -160,7 +172,7 @@ namespace MasterSystemView
         {
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.FetchAllWorkStationAsync(this.WorkStationContainer);
+                await InterfacesToMasterDApp.GetAllWorkStationAsync(this.WorkStationContainer);
             });
         }
 
@@ -174,7 +186,7 @@ namespace MasterSystemView
         {
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.FetchAllWorkPlanAsync(this.WorkPlanContainer);
+                await InterfacesToMasterDApp.GetAllWorkPlanAsync(this.WorkPlanContainer);
             });
         }
 
@@ -268,7 +280,7 @@ namespace MasterSystemView
                 var selectedwp = WorkPlanContainer[this.selectedWPId];
                 Task.Run(async () =>
                 {
-                    await InterfacesToMasterDApp.CommitWorkPlanAsync(selectedwp);
+                    await InterfacesToMasterDApp.UpdateWorkPlanAsync(selectedwp);
                 });
             }
             else
@@ -286,7 +298,7 @@ namespace MasterSystemView
         {
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.FetchAllSalesOrderAsync(this.SalesOrderContainer);
+                await InterfacesToMasterDApp.GetAllSalesOrderAsync(this.SalesOrderContainer);
             });
         }
 
@@ -362,10 +374,10 @@ namespace MasterSystemView
             if (dataGridView_SalesOrder.SelectedRows.Count > 0)
             {
                 var selectedso = SalesOrderContainer[this.selectedSOId];
-                selectedso.Release = TimeStamp.Now;
+
                 Task.Run(async () =>
                 {
-                    await InterfacesToMasterDApp.CommitSalesOrderAsync(selectedso);
+                    await InterfacesToMasterDApp.UpdateSalesOrderAsync(selectedso);
                 });
             }
             else
@@ -395,7 +407,47 @@ namespace MasterSystemView
         {
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.FetchAllData(this.LedgerContainer);
+                await InterfacesToMasterDApp.GetAllDataFromMgmt(this.MgmtLedgerContainer);
+            });
+        }
+
+        private void btnReadLedgerFromProd_Click(object sender, EventArgs e)
+        {
+            Task.Run(async () =>
+            {
+                await InterfacesToMasterDApp.GetAllDataFromProd(this.ProdLedgerContainer);
+            });
+        }
+
+        private void btnStartSO_Click(object sender, EventArgs e)
+        {
+            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            Task.Run(async () =>
+            {
+                await InterfacesToMasterDApp.StartSO(selectedso);
+            });
+        }
+
+        private void btnPendSO_Click(object sender, EventArgs e)
+        {
+            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            Task.Run(async () =>
+            {
+                await InterfacesToMasterDApp.PendSO(selectedso);
+            });
+        }
+
+        private void btnECO_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnRestart_Click(object sender, EventArgs e)
+        {
+            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            Task.Run(async () =>
+            {
+                await InterfacesToMasterDApp.RestartSO(selectedso);
             });
         }
 

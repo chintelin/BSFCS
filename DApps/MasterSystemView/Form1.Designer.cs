@@ -55,23 +55,30 @@
             tabPage_SO = new TabPage();
             panel7 = new Panel();
             dataGridView_SalesOrder = new DataGridView();
+            panel9 = new Panel();
+            btnDeleteTerm = new Button();
+            btnCloneTerm = new Button();
+            btnECO = new Button();
+            btnModifyTerm = new Button();
+            btnAddTerm = new Button();
             panel8 = new Panel();
             txtSelectedSoId = new TextBox();
-            btnAddTerm = new Button();
-            btnDeleteTerm = new Button();
-            btnModifyTerm = new Button();
-            btnCloneTerm = new Button();
             textBox2 = new TextBox();
-            btnPostSalesOrderToMES = new Button();
             panel3 = new Panel();
             listBox_SO = new ListBox();
+            btnStartSO = new Button();
+            btnPendSO = new Button();
+            btnPostSalesOrderToMES = new Button();
             btnSyncSOFromMES = new Button();
             btnDeleteSO = new Button();
             btn_AddSO = new Button();
-            tabPage_WO = new TabPage();
-            tabPage_Ledger = new TabPage();
-            rtxt_ledger = new RichTextBox();
+            btnRestart = new Button();
+            tabPage_MgmtLedger = new TabPage();
+            rtxt_Mgmtledger = new RichTextBox();
             btnReadLedger = new Button();
+            tabPage_ProdLedger = new TabPage();
+            rtxt_ProdLedger = new RichTextBox();
+            btnReadLedgerFromProd = new Button();
             button_WPSync = new Button();
             timer1 = new System.Windows.Forms.Timer(components);
             tabControl1.SuspendLayout();
@@ -87,9 +94,11 @@
             tabPage_SO.SuspendLayout();
             panel7.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView_SalesOrder).BeginInit();
+            panel9.SuspendLayout();
             panel8.SuspendLayout();
             panel3.SuspendLayout();
-            tabPage_Ledger.SuspendLayout();
+            tabPage_MgmtLedger.SuspendLayout();
+            tabPage_ProdLedger.SuspendLayout();
             SuspendLayout();
             // 
             // tabControl1
@@ -98,8 +107,8 @@
             tabControl1.Controls.Add(tabPage_WS);
             tabControl1.Controls.Add(tabPage_WP);
             tabControl1.Controls.Add(tabPage_SO);
-            tabControl1.Controls.Add(tabPage_WO);
-            tabControl1.Controls.Add(tabPage_Ledger);
+            tabControl1.Controls.Add(tabPage_MgmtLedger);
+            tabControl1.Controls.Add(tabPage_ProdLedger);
             tabControl1.Dock = DockStyle.Fill;
             tabControl1.Font = new Font("Consolas", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
             tabControl1.ImeMode = ImeMode.Alpha;
@@ -381,6 +390,7 @@
             // panel7
             // 
             panel7.Controls.Add(dataGridView_SalesOrder);
+            panel7.Controls.Add(panel9);
             panel7.Controls.Add(panel8);
             panel7.Dock = DockStyle.Fill;
             panel7.Location = new Point(118, 0);
@@ -392,110 +402,124 @@
             // 
             dataGridView_SalesOrder.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dataGridView_SalesOrder.Dock = DockStyle.Fill;
-            dataGridView_SalesOrder.Location = new Point(0, 46);
+            dataGridView_SalesOrder.Location = new Point(0, 80);
             dataGridView_SalesOrder.MultiSelect = false;
             dataGridView_SalesOrder.Name = "dataGridView_SalesOrder";
             dataGridView_SalesOrder.RowTemplate.Height = 25;
             dataGridView_SalesOrder.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dataGridView_SalesOrder.Size = new Size(667, 422);
+            dataGridView_SalesOrder.Size = new Size(667, 388);
             dataGridView_SalesOrder.TabIndex = 7;
             // 
-            // panel8
+            // panel9
             // 
-            panel8.Controls.Add(txtSelectedSoId);
-            panel8.Controls.Add(btnAddTerm);
-            panel8.Controls.Add(btnDeleteTerm);
-            panel8.Controls.Add(btnModifyTerm);
-            panel8.Controls.Add(btnCloneTerm);
-            panel8.Controls.Add(textBox2);
-            panel8.Controls.Add(btnPostSalesOrderToMES);
-            panel8.Dock = DockStyle.Top;
-            panel8.Location = new Point(0, 0);
-            panel8.Name = "panel8";
-            panel8.Size = new Size(667, 46);
-            panel8.TabIndex = 6;
+            panel9.Controls.Add(btnDeleteTerm);
+            panel9.Controls.Add(btnCloneTerm);
+            panel9.Controls.Add(btnECO);
+            panel9.Controls.Add(btnModifyTerm);
+            panel9.Controls.Add(btnAddTerm);
+            panel9.Dock = DockStyle.Top;
+            panel9.Location = new Point(0, 28);
+            panel9.Name = "panel9";
+            panel9.Size = new Size(667, 52);
+            panel9.TabIndex = 8;
             // 
-            // txtSelectedSoId
+            // btnDeleteTerm
             // 
-            txtSelectedSoId.BorderStyle = BorderStyle.None;
-            txtSelectedSoId.Dock = DockStyle.Fill;
-            txtSelectedSoId.Location = new Point(125, 0);
-            txtSelectedSoId.Multiline = true;
-            txtSelectedSoId.Name = "txtSelectedSoId";
-            txtSelectedSoId.Size = new Size(66, 46);
-            txtSelectedSoId.TabIndex = 5;
+            btnDeleteTerm.Dock = DockStyle.Left;
+            btnDeleteTerm.Location = new Point(305, 0);
+            btnDeleteTerm.Name = "btnDeleteTerm";
+            btnDeleteTerm.Size = new Size(110, 52);
+            btnDeleteTerm.TabIndex = 1;
+            btnDeleteTerm.Text = "Delete term";
+            btnDeleteTerm.UseVisualStyleBackColor = true;
+            // 
+            // btnCloneTerm
+            // 
+            btnCloneTerm.Dock = DockStyle.Left;
+            btnCloneTerm.Location = new Point(199, 0);
+            btnCloneTerm.Name = "btnCloneTerm";
+            btnCloneTerm.Size = new Size(106, 52);
+            btnCloneTerm.TabIndex = 3;
+            btnCloneTerm.Text = "Clone term";
+            btnCloneTerm.UseVisualStyleBackColor = true;
+            // 
+            // btnECO
+            // 
+            btnECO.Dock = DockStyle.Right;
+            btnECO.Location = new Point(549, 0);
+            btnECO.Name = "btnECO";
+            btnECO.Size = new Size(118, 52);
+            btnECO.TabIndex = 6;
+            btnECO.Text = "Apply ECO";
+            btnECO.UseVisualStyleBackColor = true;
+            btnECO.Click += btnECO_Click;
+            // 
+            // btnModifyTerm
+            // 
+            btnModifyTerm.Dock = DockStyle.Left;
+            btnModifyTerm.Location = new Point(84, 0);
+            btnModifyTerm.Name = "btnModifyTerm";
+            btnModifyTerm.Size = new Size(115, 52);
+            btnModifyTerm.TabIndex = 2;
+            btnModifyTerm.Text = "Modify term";
+            btnModifyTerm.UseVisualStyleBackColor = true;
+            btnModifyTerm.Click += btnModifyTerm_Click;
             // 
             // btnAddTerm
             // 
-            btnAddTerm.Dock = DockStyle.Right;
-            btnAddTerm.Location = new Point(191, 0);
+            btnAddTerm.Dock = DockStyle.Left;
+            btnAddTerm.Location = new Point(0, 0);
             btnAddTerm.Name = "btnAddTerm";
-            btnAddTerm.Size = new Size(64, 46);
+            btnAddTerm.Size = new Size(84, 52);
             btnAddTerm.TabIndex = 0;
             btnAddTerm.Text = "Add Term";
             btnAddTerm.UseVisualStyleBackColor = true;
             btnAddTerm.Click += btnAddTerm_Click;
             // 
-            // btnDeleteTerm
+            // panel8
             // 
-            btnDeleteTerm.Dock = DockStyle.Right;
-            btnDeleteTerm.Location = new Point(255, 0);
-            btnDeleteTerm.Name = "btnDeleteTerm";
-            btnDeleteTerm.Size = new Size(116, 46);
-            btnDeleteTerm.TabIndex = 1;
-            btnDeleteTerm.Text = "Delete selected term";
-            btnDeleteTerm.UseVisualStyleBackColor = true;
+            panel8.Controls.Add(txtSelectedSoId);
+            panel8.Controls.Add(textBox2);
+            panel8.Dock = DockStyle.Top;
+            panel8.Location = new Point(0, 0);
+            panel8.Name = "panel8";
+            panel8.Size = new Size(667, 28);
+            panel8.TabIndex = 6;
             // 
-            // btnModifyTerm
+            // txtSelectedSoId
             // 
-            btnModifyTerm.Dock = DockStyle.Right;
-            btnModifyTerm.Location = new Point(371, 0);
-            btnModifyTerm.Name = "btnModifyTerm";
-            btnModifyTerm.Size = new Size(115, 46);
-            btnModifyTerm.TabIndex = 2;
-            btnModifyTerm.Text = "Modify selected term";
-            btnModifyTerm.UseVisualStyleBackColor = true;
-            btnModifyTerm.Click += btnModifyTerm_Click;
-            // 
-            // btnCloneTerm
-            // 
-            btnCloneTerm.Dock = DockStyle.Right;
-            btnCloneTerm.Location = new Point(486, 0);
-            btnCloneTerm.Name = "btnCloneTerm";
-            btnCloneTerm.Size = new Size(106, 46);
-            btnCloneTerm.TabIndex = 3;
-            btnCloneTerm.Text = "Clone selected term";
-            btnCloneTerm.UseVisualStyleBackColor = true;
+            txtSelectedSoId.BackColor = Color.FromArgb(192, 255, 192);
+            txtSelectedSoId.BorderStyle = BorderStyle.None;
+            txtSelectedSoId.Dock = DockStyle.Fill;
+            txtSelectedSoId.Location = new Point(211, 0);
+            txtSelectedSoId.Multiline = true;
+            txtSelectedSoId.Name = "txtSelectedSoId";
+            txtSelectedSoId.Size = new Size(456, 28);
+            txtSelectedSoId.TabIndex = 5;
             // 
             // textBox2
             // 
+            textBox2.BackColor = Color.FromArgb(192, 255, 192);
             textBox2.BorderStyle = BorderStyle.None;
             textBox2.Dock = DockStyle.Left;
             textBox2.Location = new Point(0, 0);
             textBox2.Multiline = true;
             textBox2.Name = "textBox2";
-            textBox2.Size = new Size(125, 46);
+            textBox2.Size = new Size(211, 28);
             textBox2.TabIndex = 4;
-            textBox2.Text = "Sales Order Num:";
+            textBox2.Text = "Selected Sales Order Num:";
             textBox2.TextAlign = HorizontalAlignment.Right;
-            // 
-            // btnPostSalesOrderToMES
-            // 
-            btnPostSalesOrderToMES.Dock = DockStyle.Right;
-            btnPostSalesOrderToMES.Location = new Point(592, 0);
-            btnPostSalesOrderToMES.Name = "btnPostSalesOrderToMES";
-            btnPostSalesOrderToMES.Size = new Size(75, 46);
-            btnPostSalesOrderToMES.TabIndex = 7;
-            btnPostSalesOrderToMES.Text = "Sync to MES";
-            btnPostSalesOrderToMES.UseVisualStyleBackColor = true;
-            btnPostSalesOrderToMES.Click += btnPostSalesOrderToMES_Click;
             // 
             // panel3
             // 
             panel3.Controls.Add(listBox_SO);
+            panel3.Controls.Add(btnStartSO);
+            panel3.Controls.Add(btnPendSO);
+            panel3.Controls.Add(btnPostSalesOrderToMES);
             panel3.Controls.Add(btnSyncSOFromMES);
             panel3.Controls.Add(btnDeleteSO);
             panel3.Controls.Add(btn_AddSO);
+            panel3.Controls.Add(btnRestart);
             panel3.Dock = DockStyle.Left;
             panel3.Location = new Point(0, 0);
             panel3.Name = "panel3";
@@ -507,11 +531,46 @@
             listBox_SO.Dock = DockStyle.Fill;
             listBox_SO.FormattingEnabled = true;
             listBox_SO.ItemHeight = 15;
-            listBox_SO.Location = new Point(0, 127);
+            listBox_SO.Location = new Point(0, 185);
             listBox_SO.Name = "listBox_SO";
-            listBox_SO.Size = new Size(118, 341);
+            listBox_SO.Size = new Size(118, 136);
             listBox_SO.TabIndex = 3;
             listBox_SO.SelectedIndexChanged += listBox_SO_SelectedIndexChanged;
+            // 
+            // btnStartSO
+            // 
+            btnStartSO.Dock = DockStyle.Bottom;
+            btnStartSO.ForeColor = Color.Blue;
+            btnStartSO.Location = new Point(0, 321);
+            btnStartSO.Name = "btnStartSO";
+            btnStartSO.Size = new Size(118, 56);
+            btnStartSO.TabIndex = 4;
+            btnStartSO.Text = "Start Selected Order";
+            btnStartSO.UseVisualStyleBackColor = true;
+            btnStartSO.Click += btnStartSO_Click;
+            // 
+            // btnPendSO
+            // 
+            btnPendSO.Dock = DockStyle.Bottom;
+            btnPendSO.ForeColor = Color.Blue;
+            btnPendSO.Location = new Point(0, 377);
+            btnPendSO.Name = "btnPendSO";
+            btnPendSO.Size = new Size(118, 39);
+            btnPendSO.TabIndex = 5;
+            btnPendSO.Text = "Pend Selected Order";
+            btnPendSO.UseVisualStyleBackColor = true;
+            btnPendSO.Click += btnPendSO_Click;
+            // 
+            // btnPostSalesOrderToMES
+            // 
+            btnPostSalesOrderToMES.Dock = DockStyle.Top;
+            btnPostSalesOrderToMES.Location = new Point(0, 127);
+            btnPostSalesOrderToMES.Name = "btnPostSalesOrderToMES";
+            btnPostSalesOrderToMES.Size = new Size(118, 58);
+            btnPostSalesOrderToMES.TabIndex = 7;
+            btnPostSalesOrderToMES.Text = "Sync Selected Order to MES";
+            btnPostSalesOrderToMES.UseVisualStyleBackColor = true;
+            btnPostSalesOrderToMES.Click += btnPostSalesOrderToMES_Click;
             // 
             // btnSyncSOFromMES
             // 
@@ -520,7 +579,7 @@
             btnSyncSOFromMES.Name = "btnSyncSOFromMES";
             btnSyncSOFromMES.Size = new Size(118, 41);
             btnSyncSOFromMES.TabIndex = 2;
-            btnSyncSOFromMES.Text = "Sync From MES";
+            btnSyncSOFromMES.Text = "Sync All From MES";
             btnSyncSOFromMES.UseVisualStyleBackColor = true;
             btnSyncSOFromMES.Click += btnSyncSOFromMES_Click;
             // 
@@ -532,7 +591,7 @@
             btnDeleteSO.Name = "btnDeleteSO";
             btnDeleteSO.Size = new Size(118, 46);
             btnDeleteSO.TabIndex = 1;
-            btnDeleteSO.Text = "Delete";
+            btnDeleteSO.Text = "Delete Order";
             btnDeleteSO.UseVisualStyleBackColor = true;
             // 
             // btn_AddSO
@@ -542,40 +601,43 @@
             btn_AddSO.Name = "btn_AddSO";
             btn_AddSO.Size = new Size(118, 40);
             btn_AddSO.TabIndex = 0;
-            btn_AddSO.Text = "Add";
+            btn_AddSO.Text = "Add Order";
             btn_AddSO.UseVisualStyleBackColor = true;
             btn_AddSO.Click += btn_AddSO_Click;
             // 
-            // tabPage_WO
+            // btnRestart
             // 
-            tabPage_WO.Location = new Point(4, 27);
-            tabPage_WO.Name = "tabPage_WO";
-            tabPage_WO.Padding = new Padding(3);
-            tabPage_WO.Size = new Size(785, 468);
-            tabPage_WO.TabIndex = 3;
-            tabPage_WO.Text = "Work Order";
-            tabPage_WO.UseVisualStyleBackColor = true;
+            btnRestart.Dock = DockStyle.Bottom;
+            btnRestart.ForeColor = Color.Blue;
+            btnRestart.Location = new Point(0, 416);
+            btnRestart.Name = "btnRestart";
+            btnRestart.Size = new Size(118, 52);
+            btnRestart.TabIndex = 8;
+            btnRestart.Text = "Restart Selected Order";
+            btnRestart.UseVisualStyleBackColor = true;
+            btnRestart.Click += btnRestart_Click;
             // 
-            // tabPage_Ledger
+            // tabPage_MgmtLedger
             // 
-            tabPage_Ledger.Controls.Add(rtxt_ledger);
-            tabPage_Ledger.Controls.Add(btnReadLedger);
-            tabPage_Ledger.Location = new Point(4, 27);
-            tabPage_Ledger.Name = "tabPage_Ledger";
-            tabPage_Ledger.Padding = new Padding(3);
-            tabPage_Ledger.Size = new Size(785, 468);
-            tabPage_Ledger.TabIndex = 4;
-            tabPage_Ledger.Text = "Ledger View";
-            tabPage_Ledger.UseVisualStyleBackColor = true;
+            tabPage_MgmtLedger.Controls.Add(rtxt_Mgmtledger);
+            tabPage_MgmtLedger.Controls.Add(btnReadLedger);
+            tabPage_MgmtLedger.Location = new Point(4, 27);
+            tabPage_MgmtLedger.Name = "tabPage_MgmtLedger";
+            tabPage_MgmtLedger.Padding = new Padding(3);
+            tabPage_MgmtLedger.Size = new Size(785, 468);
+            tabPage_MgmtLedger.TabIndex = 4;
+            tabPage_MgmtLedger.Text = "Mgmt Ledger View";
+            tabPage_MgmtLedger.UseVisualStyleBackColor = true;
             // 
-            // rtxt_ledger
+            // rtxt_Mgmtledger
             // 
-            rtxt_ledger.Dock = DockStyle.Fill;
-            rtxt_ledger.Location = new Point(3, 40);
-            rtxt_ledger.Name = "rtxt_ledger";
-            rtxt_ledger.Size = new Size(779, 425);
-            rtxt_ledger.TabIndex = 1;
-            rtxt_ledger.Text = "";
+            rtxt_Mgmtledger.BackColor = SystemColors.GradientInactiveCaption;
+            rtxt_Mgmtledger.Dock = DockStyle.Fill;
+            rtxt_Mgmtledger.Location = new Point(3, 40);
+            rtxt_Mgmtledger.Name = "rtxt_Mgmtledger";
+            rtxt_Mgmtledger.Size = new Size(779, 425);
+            rtxt_Mgmtledger.TabIndex = 1;
+            rtxt_Mgmtledger.Text = "";
             // 
             // btnReadLedger
             // 
@@ -587,6 +649,38 @@
             btnReadLedger.Text = "Read ledger ...";
             btnReadLedger.UseVisualStyleBackColor = true;
             btnReadLedger.Click += btnReadLedger_Click;
+            // 
+            // tabPage_ProdLedger
+            // 
+            tabPage_ProdLedger.Controls.Add(rtxt_ProdLedger);
+            tabPage_ProdLedger.Controls.Add(btnReadLedgerFromProd);
+            tabPage_ProdLedger.Location = new Point(4, 27);
+            tabPage_ProdLedger.Name = "tabPage_ProdLedger";
+            tabPage_ProdLedger.Size = new Size(785, 468);
+            tabPage_ProdLedger.TabIndex = 5;
+            tabPage_ProdLedger.Text = "Production Ledger View";
+            tabPage_ProdLedger.UseVisualStyleBackColor = true;
+            // 
+            // rtxt_ProdLedger
+            // 
+            rtxt_ProdLedger.BackColor = SystemColors.Info;
+            rtxt_ProdLedger.Dock = DockStyle.Fill;
+            rtxt_ProdLedger.Location = new Point(0, 42);
+            rtxt_ProdLedger.Name = "rtxt_ProdLedger";
+            rtxt_ProdLedger.Size = new Size(785, 426);
+            rtxt_ProdLedger.TabIndex = 1;
+            rtxt_ProdLedger.Text = "";
+            // 
+            // btnReadLedgerFromProd
+            // 
+            btnReadLedgerFromProd.Dock = DockStyle.Top;
+            btnReadLedgerFromProd.Location = new Point(0, 0);
+            btnReadLedgerFromProd.Name = "btnReadLedgerFromProd";
+            btnReadLedgerFromProd.Size = new Size(785, 42);
+            btnReadLedgerFromProd.TabIndex = 0;
+            btnReadLedgerFromProd.Text = "Read Ledger";
+            btnReadLedgerFromProd.UseVisualStyleBackColor = true;
+            btnReadLedgerFromProd.Click += btnReadLedgerFromProd_Click;
             // 
             // button_WPSync
             // 
@@ -627,10 +721,12 @@
             tabPage_SO.ResumeLayout(false);
             panel7.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dataGridView_SalesOrder).EndInit();
+            panel9.ResumeLayout(false);
             panel8.ResumeLayout(false);
             panel8.PerformLayout();
             panel3.ResumeLayout(false);
-            tabPage_Ledger.ResumeLayout(false);
+            tabPage_MgmtLedger.ResumeLayout(false);
+            tabPage_ProdLedger.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -668,7 +764,6 @@
         private Button button_WorkPlanDelete;
         private Button button_TransitionDelete;
         private Button button_TransitionModify;
-        private TabPage tabPage_WO;
         private TextBox txtSelectedSoId;
         private TextBox textBox2;
         private Button btnCloneTerm;
@@ -678,8 +773,16 @@
         private Panel panel8;
         private Button btnPostSalesOrderToMES;
         private DataGridView dataGridView_SalesOrder;
-        private TabPage tabPage_Ledger;
-        private RichTextBox rtxt_ledger;
+        private TabPage tabPage_MgmtLedger;
+        private RichTextBox rtxt_Mgmtledger;
         private Button btnReadLedger;
+        private Button btnStartSO;
+        private Button btnPendSO;
+        private Button btnECO;
+        private TabPage tabPage_ProdLedger;
+        private Button btnReadLedgerFromProd;
+        private RichTextBox rtxt_ProdLedger;
+        private Panel panel9;
+        private Button btnRestart;
     }
 }

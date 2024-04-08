@@ -18,6 +18,13 @@ function showMsg(key) {
 }
 
 class BMES_MGMT extends Contract {
+
+    async Initialize(ctx) {
+        await this.InitWorkStationDoc(ctx);
+        await this.InitWorkPlanDoc(ctx);
+        await this.InitSalesOrderDoc(ctx);
+    }
+
     //#region WorkStation
     async InitWorkStationDoc(ctx) {
         showMsg('============= START : InitWorkStationDoc ===========');

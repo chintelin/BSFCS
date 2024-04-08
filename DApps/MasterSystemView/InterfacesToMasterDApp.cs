@@ -18,7 +18,7 @@ namespace MasterSystemView
         private static readonly HttpClient client = new HttpClient();
 
         #region WorkStation
-        static public async Task FetchAllWorkStationAsync(WorkStationContainer container)
+        static public async Task GetAllWorkStationAsync(WorkStationContainer container)
         {
             string url = HostUrl + "/GetAllWorkStation";
             try
@@ -41,7 +41,7 @@ namespace MasterSystemView
             }
         }
 
-        static public async Task AddWorkStationAsync(WorkStationContainer container, WorkStationDef newWorkStation)
+        static public async Task PostWorkStationAsync(WorkStationContainer container, WorkStationDef newWorkStation)
         {
             string url = HostUrl + "/PostWorkStation";
             try
@@ -99,7 +99,7 @@ namespace MasterSystemView
 
         //==================================================================
         #region work plan
-        static public async Task FetchAllWorkPlanAsync(WorkPlanContainer container)
+        static public async Task GetAllWorkPlanAsync(WorkPlanContainer container)
         {
             string url = HostUrl + "/GetAllWP";
             try
@@ -122,7 +122,7 @@ namespace MasterSystemView
             }
         }
 
-        static public async Task CommitWorkPlanAsync(WorkPlanDef updateInfo)
+        static public async Task UpdateWorkPlanAsync(WorkPlanDef updateInfo)
         {
             string url = HostUrl + "/UpdateWP";
             try
@@ -153,7 +153,7 @@ namespace MasterSystemView
 
         //==================================================================
         #region sales order
-        static public async Task FetchAllSalesOrderAsync(SalesOrderContainer container)
+        static public async Task GetAllSalesOrderAsync(SalesOrderContainer container)
         {
             string url = HostUrl + "/GetAllSO";
             try
@@ -186,7 +186,7 @@ namespace MasterSystemView
         }
 
 
-        static public async Task CommitSalesOrderAsync(SalesOrderDef updateInfo)
+        static public async Task UpdateSalesOrderAsync(SalesOrderDef updateInfo)
         {
             string url = HostUrl + "/UpdateSO";
             try
@@ -214,9 +214,9 @@ namespace MasterSystemView
         //==================================================================
 
 
-        static public async Task FetchAllData(LedgerContainer container)
+        static public async Task GetAllDataFromProd(LedgerContainer container)
         {
-            string url = HostUrl + "/GetAll";
+            string url = HostUrl + "/GetAllObjectFromProd";
             try
             {
                 HttpResponseMessage response = await client.GetAsync(url);
@@ -228,6 +228,68 @@ namespace MasterSystemView
                 {
                     Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+        static public async Task GetAllDataFromMgmt(LedgerContainer container)
+        {
+            string url = HostUrl + "/GetAllObjectFromMgmt";
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    container.Json = await response.Content.ReadAsStringAsync();
+                }
+                else
+                {
+                    Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+        static public async Task StartSO(string id)
+        {
+            string url = HostUrl + "/StartSO" + "?ID=" + id.ToString();
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                    Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+        static public async Task PendSO( string id)
+        {
+            string url = HostUrl + "/PendSO" + "?ID=" + id.ToString();
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                    Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+        static public async Task RestartSO(string id)
+        {
+            string url = HostUrl + "/RestartSO" + "?ID=" + id.ToString();
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                    Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
             }
             catch (Exception ex)
             {

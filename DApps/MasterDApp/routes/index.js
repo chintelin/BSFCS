@@ -153,6 +153,19 @@ router.post('/ApplyEngineeringChangeOrder', async function (req, res) {
     }
 });
 
+//router.get('/InitializeLedger', async function (req, res) {
+//    try {
+//        let result = {};
+//        let mgmtres = await client.InitializeMamt();
+//        result["mgmtResult"] = mgmtres.toString();
+//        let prodres = await client.InitializeProd();
+//        result["prodResult"] = prodres.toString();
+//        res.end(JSON.stringify(result));
+//    }
+//    catch (ex) {
+//        res.end(ex.toString());
+//    }
+//});
 
 
 

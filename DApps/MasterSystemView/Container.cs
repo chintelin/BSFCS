@@ -10,7 +10,6 @@ namespace MasterSystemView
     internal abstract class AsyncContainer
     {
         internal bool IsUpdated { get; set; } = false;
-
     }
 
     /*
@@ -68,7 +67,6 @@ namespace MasterSystemView
         {
             lock (Dict)
             {
-
                 Dict = soDict;
                 IsUpdated = true;
             }

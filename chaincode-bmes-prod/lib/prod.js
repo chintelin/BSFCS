@@ -14,6 +14,10 @@ function showMsg(key) {
 }
 
 class BMES_PROD extends Contract {
+    async Initialize(ctx) {
+        await this.InitCarrier(ctx);
+    }
+
     async InitCarrier(ctx) {
         const str_mspid = await ctx.stub.getMspID();
         showMsg('============= START : InitCarrier =============');

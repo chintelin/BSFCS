@@ -48,13 +48,53 @@ namespace MasterSystemView
     public class SalesOrderDef
     {
         public string ID { get; set; } = "";
-        public string Release { get; set; } = "";
-        public string Start { get; set; } = ""; // 時間格式：YYYY-MM-DD-hh-mm-ss
-        public string Stop { get; set; } = "";
         public Dictionary<string, SalesTermDef> SalesTerms { get; set; }
             = new Dictionary<string, SalesTermDef>();
+    }
+    public class SalesOrderState
+    {
+        public string Condition { get; set; } = "";
+        public string Release { get; set; } = "";        
+        public string Start { get; set; } = "";
+        public string End { get; set; } = "";
+        public string Tag { get; set; } = "";
+    }
+    public class SalesOrderStateMessage
+    {
+        public string ID { get; set; } = "";
+        public string Condition { get; set; } = "";
+        public string Release { get; set; } = "";
+        public string Start { get; set; } = "";
+        public string End { get; set; } = "";        
+        public Dictionary<string, SalesTermDef> SalesTerms { get; set; }
+          = new Dictionary<string, SalesTermDef>();
 
+        public void ComposedOf(SalesOrderDef def, SalesOrderState state)
+        {
+            this.ID = def.ID;
+            this.SalesTerms = def.SalesTerms;
+            this.Condition = state.Condition;
+            this.Release = state.Release;
+            this.Start = state.Start;
+            this.End = state.End;            
+        }
 
+        public void DeposeTo(ref SalesOrderDef def, ref SalesOrderState state)
+        {
+            def.ID = this.ID;
+            def.SalesTerms = this.SalesTerms;
+            state.Release = this.Release;
+            state.Start = this.Start;   
+            state.End = this.End;
+            state.Condition = this.Condition;
+        }
+    }
+
+    public class ECODef
+    {
+        public string SalesOrder { get; set; } = "";
+        public string SalesTerm { get; set; } = "";
+        public string NewWorkPlan { get; set; } = "";
     }
 
     public class TimeStamp

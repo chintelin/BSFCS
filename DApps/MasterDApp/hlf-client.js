@@ -247,6 +247,19 @@ async function GetAllObjectFromProd() {
 	return resultStr;
 }
 
+async function InitializeProd() {
+	let result = await contractProd.evaluateTransaction('Initialize');
+	let resultStr = result.toString();
+	return resultStr;
+}
+
+async function InitializeMamt() {
+	let result = await contractMgmt.evaluateTransaction('Initialize');
+	let resultStr = result.toString();
+	return resultStr;
+}
+
+
 
 StartConnectingToHlfNetwork();
 exports.GetAllWorkStation = GetAllWorkStation;
@@ -272,4 +285,5 @@ exports.ApplyEngineeringChangeOrderToProd = ApplyEngineeringChangeOrderToProd;
 exports.GetAllObjectFromMgmt = GetAllObjectFromMgmt;
 exports.ApplyEngineeringChangeOrderToMgmt = ApplyEngineeringChangeOrderToMgmt;
 
-
+exports.InitializeProd = InitializeProd;
+exports.InitializeMamt = InitializeMamt;
