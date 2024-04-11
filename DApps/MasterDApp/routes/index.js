@@ -138,9 +138,9 @@ router.get('/RestartSO', async function (req, res) {
 
 router.post('/ApplyEngineeringChangeOrder', async function (req, res) {
     try {
-        let salesOrderId = req.body.salesOrder.toString();
-        let salesTermId = req.body.salesTerm.toString();
-        let newWorkPlanId = req.body.newWorkPlan.toString();
+        let salesOrderId = req.body.SalesOrder.toString();
+        let salesTermId = req.body.SalesTerm.toString();
+        let newWorkPlanId = req.body.NewWorkPlan.toString();
         let result = {};
         let mgmtres = await client.ApplyEngineeringChangeOrderToMgmt(salesOrderId, salesTermId, newWorkPlanId);
         result["mgmtResult"] = mgmtres.toString();

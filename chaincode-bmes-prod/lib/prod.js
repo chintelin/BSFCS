@@ -176,13 +176,14 @@ class BMES_PROD extends Contract {
         return `The sales order ${so_id} is pended.`;
     }
     async RestartSalesOrder(ctx, so_id) {
-        showMsg('============= START : ReStartSalesOrder =============');
+        showMsg('============= START : RestartSalesOrder =============');
 
         // 檢查銷售訂單是否存在
         const so_key = ctx.stub.createCompositeKey('bmes', ["salesorderstateatprod", so_id]);
         const so_json = await ctx.stub.getState(so_key);
         if (!so_json || so_json.length === 0) {
             //throw new Error(`The sales order ${so_id} does not exist`);
+            showMsg(`The sales order ${so_id} does not exist`);
             return `The sales order ${so_id} does not exist`;
         }
 

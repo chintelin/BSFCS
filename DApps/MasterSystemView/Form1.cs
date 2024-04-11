@@ -421,33 +421,47 @@ namespace MasterSystemView
 
         private void btnStartSO_Click(object sender, EventArgs e)
         {
-            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            var selectedso = SalesOrderContainer[this.selectedSOId];
+            string so_id = selectedso.ID;
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.StartSO(selectedso);
+                await InterfacesToMasterDApp.StartSO(so_id);
             });
         }
 
         private void btnPendSO_Click(object sender, EventArgs e)
         {
-            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            var selectedso = SalesOrderContainer[this.selectedSOId];
+            string so_id = selectedso.ID;
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.PendSO(selectedso);
+                await InterfacesToMasterDApp.PendSO(so_id);
             });
         }
 
         private void btnECO_Click(object sender, EventArgs e)
         {
-
+            var so_id = this.selectedSOId;
+            var selectedSalesOrder = SalesOrderContainer[this.selectedSOId];
+            var salesTerms = selectedSalesOrder.SalesTerms;
+            foreach (var st in salesTerms)
+            {
+                var st_id = st.Value.ID;
+                var wp_id = st.Value.RefWorkPlan;
+                Task.Run(async () =>
+                {
+                    await InterfacesToMasterDApp.ApplyEngineeringChangeOrderAsync(so_id,st_id,wp_id);
+                });
+            }
         }
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
-            var selectedso = SalesOrderContainer[this.selectedSOId].ToString();
+            var selectedso = SalesOrderContainer[this.selectedSOId];
+            string so_id = selectedso.ID;
             Task.Run(async () =>
             {
-                await InterfacesToMasterDApp.RestartSO(selectedso);
+                await InterfacesToMasterDApp.RestartSO(so_id);
             });
         }
 

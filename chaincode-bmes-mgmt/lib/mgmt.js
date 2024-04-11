@@ -456,8 +456,8 @@ class BMES_MGMT extends Contract {
         
         if (so_state.Condition == "Released")// only in released condition, so can be updated.
         {
-            let key = ctx.stub.createCompositeKey('bmes', ['salesorder', id]);
-            showMsg(`Sales Order ${id} ${so} data is been put into the mgmt legder`);
+            let key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
+            showMsg(`Sales Order ${so_id} data is been put into the mgmt legder`);
             let res = await ctx.stub.putState(key, Buffer.from(JSON.stringify(so)));
             showMsg('============= END : UpdateSalesOrder =============');
             return JSON.stringify(res);

@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using System.Reflection.PortableExecutable;
 using static System.Net.WebRequestMethods;
 using static MasterSystemView.SalesOrderContainer;
+using System.Dynamic;
 
 namespace MasterSystemView
 {
@@ -296,5 +297,38 @@ namespace MasterSystemView
                 Console.WriteLine("Error: " + ex.Message);
             }
         }
+
+
+        static public async Task ApplyEngineeringChangeOrderAsync(string salesOrderId, string salesTermId, string newWorkPlanId)
+        {
+            string url = HostUrl + "/ApplyEngineeringChangeOrder";
+
+            dynamic dynaObj = new ExpandoObject();
+            dynaObj.SalesOrder = salesOrderId;
+            dynaObj.SalesTerm = salesTermId;
+            dynaObj.NewWorkPlan = newWorkPlanId;
+
+            try
+            {
+                string json = JsonConvert.SerializeObject(dynaObj);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response = await client.PostAsync(url, content);
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("Response: " + responseContent);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to send  data. Status code: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+
     }
 }
