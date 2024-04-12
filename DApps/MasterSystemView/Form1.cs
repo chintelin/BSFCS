@@ -11,6 +11,7 @@ using System.Net.Http;
 using static System.Net.WebRequestMethods;
 using MasterSystemView.Dialogs;
 using static MasterSystemView.SalesOrderContainer;
+using System.Linq;
 
 namespace MasterSystemView
 {
@@ -306,9 +307,12 @@ namespace MasterSystemView
         {
             var soDict = this.SalesOrderContainer.Dict;
             var id_strings = soDict.Keys.ToArray();
-            int max_id = id_strings.Select(int.Parse).Max();
-
-            SalesOrderDef newSO = new SalesOrderDef() { ID = (max_id + 1).ToString() };
+            int max_id = 1000;
+            if (id_strings != null && id_strings.Length > 1)
+            {
+                max_id = id_strings.Select(int.Parse).Max();
+            }
+            var newSO = new SalesOrderStateMessage() { ID = (max_id + 1).ToString() };
             soDict.Add(newSO.ID, newSO);
             this.SalesOrderContainer.Update(soDict);
         }
@@ -373,11 +377,17 @@ namespace MasterSystemView
         {
             if (dataGridView_SalesOrder.SelectedRows.Count > 0)
             {
-                var selectedso = SalesOrderContainer[this.selectedSOId];
+                var selected_sos_msg = SalesOrderContainer[this.selectedSOId];
+
+                var so = new SalesOrderDef();
+                var sos = new SalesOrderState();
+
+                selected_sos_msg.DeposeTo(ref so, ref sos);
+
 
                 Task.Run(async () =>
                 {
-                    await InterfacesToMasterDApp.UpdateSalesOrderAsync(selectedso);
+                    await InterfacesToMasterDApp.UpdateSalesOrderAsync(so);
                 });
             }
             else

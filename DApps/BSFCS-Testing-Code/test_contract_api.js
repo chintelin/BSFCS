@@ -338,8 +338,8 @@ async function main() {
 			result = await contractMgmt.submitTransaction('GetAllObject');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
-			console.log('\n--> Submit Transaction: PendSalesOrder with id=1000. ....');
-			result = await contractProd.submitTransaction('PendSalesOrder', '1000');
+			//console.log('\n--> Submit Transaction: PendSalesOrder with id=1000. ....');
+			//result = await contractProd.submitTransaction('PendSalesOrder', '1000');
 			//console.log(`*** Result: ${prettyJSONString(result.toString())}`);;
 
 		} finally {

@@ -61,9 +61,9 @@ namespace MasterSystemView
 
     internal class SalesOrderContainer : AsyncContainer
     {
-        internal Dictionary<string, SalesOrderDef> Dict = new Dictionary<string, SalesOrderDef>();
+        internal Dictionary<string, SalesOrderStateMessage> Dict = new Dictionary<string, SalesOrderStateMessage>();
 
-        internal void Update(Dictionary<string, SalesOrderDef> soDict)
+        internal void Update(Dictionary<string, SalesOrderStateMessage> soDict)
         {
             lock (Dict)
             {
@@ -72,7 +72,7 @@ namespace MasterSystemView
             }
         }
 
-        internal SalesOrderDef this[string id]
+        internal SalesOrderStateMessage this[string id]
         {
             get { return Dict[id]; }
             set

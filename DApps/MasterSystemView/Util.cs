@@ -40,9 +40,9 @@ namespace MasterSystemView
         public string ID { get; set; } = "";
         public string ProductName { get; set; } = "";        
         public string RefWorkPlan { get; set; } = "";
-        public string State { get; set; } = "Waiting"; //Waiting > Started > Finished
+        public string Condition { get; set; } = "Waiting"; //Waiting > Started > Finished
         public string Start { get; set; } = "";
-        public string Stop { get; set; } = "";
+        public string End { get; set; } = "";
     }
 
     public class SalesOrderDef

@@ -9,6 +9,7 @@ using System.Reflection.PortableExecutable;
 using static System.Net.WebRequestMethods;
 using static MasterSystemView.SalesOrderContainer;
 using System.Dynamic;
+using static System.Windows.Forms.AxHost;
 
 namespace MasterSystemView
 {
@@ -156,28 +157,39 @@ namespace MasterSystemView
         #region sales order
         static public async Task GetAllSalesOrderAsync(SalesOrderContainer container)
         {
-            string url = HostUrl + "/GetAllSO";
+            string url_GetAllSo = HostUrl + "/GetAllSO";
+            string url_GetSoState = HostUrl + "/GetSOState";
             try
             {
-                HttpResponseMessage response = await client.GetAsync(url);
-                if (response.IsSuccessStatusCode)
+                HttpResponseMessage response_GetAllSo = await client.GetAsync(url_GetAllSo);
+                if (response_GetAllSo.IsSuccessStatusCode)
                 {
-                    string data = await response.Content.ReadAsStringAsync();
-                    var solist = JsonConvert.DeserializeObject<List<SalesOrderDef>>(data);
+                    string data_so = await response_GetAllSo.Content.ReadAsStringAsync();
+                    var solist = JsonConvert.DeserializeObject<List<SalesOrderDef>>(data_so);                  
 
-                    Dictionary<string, SalesOrderDef> newSODict = new Dictionary<string, SalesOrderDef>();
+                    Dictionary<string, SalesOrderStateMessage> newSODict = new Dictionary<string, SalesOrderStateMessage>();
                     if (solist != null)
                     {
                         foreach (var so in solist)
                         {
-                            newSODict[so.ID] = so;
+                            SalesOrderStateMessage sos_msg = new SalesOrderStateMessage();
+                            var soState = new SalesOrderState();
+                            HttpResponseMessage response_GetSOState = await client.GetAsync(url_GetSoState+@"/?ID="+so.ID);
+                            if (response_GetAllSo.IsSuccessStatusCode)
+                            {
+                                string data_soState = await response_GetSOState.Content.ReadAsStringAsync();
+                                sos_msg = JsonConvert.DeserializeObject<SalesOrderStateMessage>(data_soState);
+                            }
+                            //sos_msg.ComposedOf(so, soState);
+
+                            newSODict[so.ID] = sos_msg;
                         }
                         container.Update(newSODict);
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Failed to retrieve data. Status code: " + response.StatusCode);
+                    Console.WriteLine("Failed to retrieve data. Status code: " + response_GetAllSo.StatusCode);
                 }
             }
             catch (Exception ex)
