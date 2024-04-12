@@ -194,7 +194,7 @@ async function main() {
         await AppCon.ClearTransition(1);
         await AppCon.ClearTransition(2);
         console.log('Clear transition data at ' + machineName);
-        await sleep(2000);
+        await sleep(1000);
         await AppCon.InitializeSetting();
 
         if (conveyorType == "1") {
@@ -203,6 +203,7 @@ async function main() {
         else if (conveyorType == "2") {
             await AppCon.ConfigureDualConveyor();
         }
+		//await App.Com.AutoMode();
 
         console.log('restore status of ' + machineName);
 

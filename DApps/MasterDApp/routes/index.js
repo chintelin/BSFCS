@@ -17,7 +17,7 @@ router.get('/', function (req, res) {
 //    res.end(result);
 //});
 router.get('/GetAllWorkStation', async function (req, res){
-    let result = await client.GetAllWorkStation();
+    let result = await client.GetAllWorkStation();  
     res.end(result);
 });
 router.post('/PostWorkStation', async function (req, res) {

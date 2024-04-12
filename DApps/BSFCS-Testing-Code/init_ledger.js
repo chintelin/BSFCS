@@ -140,6 +140,8 @@ async function main() {
 			console.log('\n--> Submit Transaction: InitCarrier....');
 			result = await contractProd.submitTransaction('InitCarrier');
 
+			return;
+
 			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');
 			dt = new Date(Date.now());
 			await contractProd.submitTransaction('StartSaleOrder', '1000', dt.toISOString());

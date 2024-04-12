@@ -23,7 +23,7 @@ class BMES_PROD extends Contract {
         showMsg('============= START : InitCarrier =============');
         // carrier doc is designed to hold TransitionInfo 
         const carrierState = new CarrierState('free', null);
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 6; i++) {
             let key = ctx.stub.createCompositeKey('bmes', ['carrier', i.toString()]);
             await ctx.stub.putState(key, JSON.stringify(carrierState));
             //  showMsg(`Generate carrier doc # ${i}`);          

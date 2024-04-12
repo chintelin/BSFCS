@@ -191,7 +191,7 @@ async function main() {
         await AppCon.ClearTransition(1);
         await AppCon.ClearTransition(2);
         console.log('Clear transition data at ' + machineName);
-        await sleep(2000);
+        await sleep(1000);
 
         await AppCon.InitializeSetting();
 

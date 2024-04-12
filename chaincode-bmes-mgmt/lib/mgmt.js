@@ -245,7 +245,7 @@ class BMES_MGMT extends Contract {
     async InitSalesOrderDoc(ctx, str_ISO8601_timestamp) {
         let so = new SalesOrder('1000');
         so.AddSalesTerm("1", new SalesTerm("1", 'Product 1000', '1000'));
-        so.AddSalesTerm("2", new SalesTerm("2", 'Product 1000', '1000'));
+        //so.AddSalesTerm("2", new SalesTerm("2", 'Product 1000', '1000'));
 
         const so_key = ctx.stub.createCompositeKey('bmes', ['salesorder', so.ID]);        
         await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so)));

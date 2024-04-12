@@ -113,36 +113,40 @@ async function main() {
 
         if (IsOnDuty == "Yes" || !IsConnectToBMES) {
 
-
             //check in 成功寫小車 stats = 52, set transition table
             if (IsConnectToBMES) {
                 func = obj_checkInResult.Function;
                 par = obj_checkInResult.Parameter;
             }
             else {
-                func = 12;
-                par = 210;
+                func = 0;
+                par = 0;
             }
             await sleep(1000);
             await AppCon.AddTransition(1, 52, func, par, 0);
             console.log('AddTransition to =' + machineName);
         }
-
+        //Switch to Reset 
         await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', true, "Boolean");
         await sleep(100);
         await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', false, "Boolean");
         iOpMode = null;
+        console.info('Wait for iOpMode turn to 20');
         while (iOpMode != 20) {
             await AppCon.ReadValue('ns=3;s="dbVar"."OpMode"."iOpMode"').then(res => {
                 iOpMode = res.value.value;
-                console.log(iOpMode)
+                if (iOpMode == 20) {
+                    console.log(iOpMode)
+                }
             });
         }
         await sleep(100);
-
+        //Switch to Auto Mode
         //await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Start"."xBit"',true,"Boolean");
         await AppCon.WriteValue('ns=3;s="dbVar"."OpMode"."Auto"."xAct"', true, "Boolean");
+        await sleep(100);
 
+if (IsOnDuty == "Yes" || !IsConnectToBMES) {
 
         console.log('Start transition at ' + machineName);
 
@@ -156,10 +160,13 @@ async function main() {
         await sleep(5000);
 
         var xBusy = true;
+		console.info('Wait for xBusy turn to false....');
         while (xBusy != false) {
             await AppCon.ReadValue('ns=3;s="dbAppIF"."Out"."xBusy"').then(res => {
                 xBusy = res.value.value;
-                console.log(xBusy)
+                    if (xBusy == false) {
+                        console.log(xBusy)
+                    }
             });
         }
         console.log('End transition at ' + machineName);
@@ -178,6 +185,7 @@ async function main() {
             result = await contractProd.submitTransaction('ChectOut', carrierId.toString(), machineName, ts);
             console.log(`*** Invoke Result: ${prettyJSONString(result.toString())}`);;
         }
+		}//end if(IsOnDuty == "Yes" || !IsConnectToBMES) 
 
         await AppCon.ClearTransition(1);
         await AppCon.ClearTransition(2);
@@ -191,7 +199,7 @@ async function main() {
         else if (conveyorType == "2") {
             await AppCon.ConfigureDualConveyor();
         }
-
+		//await App.Com.AutoMode();
         console.log('restore status of ' + machineName);
 
 
