@@ -127,6 +127,30 @@
 			"response": []
 		},
 		{
+			"name": "TestGet",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetTesting?key=\"key000001\"",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetTesting"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "\"key000001\""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "StartSO",
 			"request": {
 				"method": "GET",
@@ -286,7 +310,7 @@
 			"response": []
 		},
 		{
-			"name": "PostWorkStation Copy",
+			"name": "PostSO",
 			"request": {
 				"method": "POST",
 				"header": [],
@@ -307,6 +331,33 @@
 					"port": "1337",
 					"path": [
 						"PostSO"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TestPost",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"ID\": \"1099\",\r\n    \"payload\": \"0000000000000000000000000000000000000000000000000000000000000000000\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/PostTesting",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"PostTesting"
 					]
 				}
 			},
