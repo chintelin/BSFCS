@@ -299,8 +299,8 @@ class BMES_MGMT extends Contract {
         let buf_so_state = await ctx.stub.getState(so_state_key);
        // showMsg(`buf_so_state type: ${typeof(buf_so_state)} and value: ${JSON.stringify(buf_so_state, null, 4)}`);
         let obj_so_state = BufferToObject(buf_so_state, "GetSalesOrderState: buf_so_state > so_state_json")
-        if (!obj_so_state || obj_so_state.length === 0) {
-            throw new Error(`The State of Sales Order ${so_id} does not exist`);        }
+        //if (!obj_so_state || obj_so_state.length === 0) {
+        //    throw new Error(`The State of Sales Order ${so_id} does not exist`);        }
         let so_state = Object.assign(new SalesOrderState(), obj_so_state);
         //showMsg(`so_state type: ${typeof(so_state)} and value: ${JSON.stringify(so_state, null, 4)}`);
          
@@ -331,12 +331,12 @@ class BMES_MGMT extends Contract {
         sos_msg = Object.assign(sos_msg, so_state);
 
         // == sync sale term state ==
-        // ¨Ï¥Î for...in °j°é¹M¾úª«¥óªº©Ò¦³Áä¦W
+        // ï¿½Ï¥ï¿½ for...in ï¿½jï¿½ï¿½Mï¿½ï¿½ï¿½ï¿½ï¿½óªº©Ò¦ï¿½ï¿½ï¿½W
         let isSalesOrderFinished = true;
         let so_end_time = new Date(-864000000000000);
 
         for (var key in so.SalesTerms) {
-            if (so.SalesTerms.hasOwnProperty(key)) { // ÀË¬d¬O§_¬°ª«¥ó¦Û¨­ªºÄÝ©Ê¡AÁ×§K¹M¾ú­ì«¬Ãì¤WªºÄÝ©Ê
+            if (so.SalesTerms.hasOwnProperty(key)) { // ï¿½Ë¬dï¿½Oï¿½_ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Û¨ï¿½ï¿½ï¿½ï¿½Ý©Ê¡Aï¿½×§Kï¿½Mï¿½ï¿½ï¿½ì«¬ï¿½ï¿½Wï¿½ï¿½ï¿½Ý©ï¿½
 
                 // get wo state from channelprod
                 const sid = sos_msg.ID;
@@ -350,8 +350,9 @@ class BMES_MGMT extends Contract {
                 // get st state 
                 const sales_term_key = await ctx.stub.createCompositeKey('bmes', ['salestermstate', so_id, key]);               
                 const buf_sales_term_state = await ctx.stub.getState(sales_term_key);
-                //showMsg(`buf_sales_term_state type: ${typeof(buf_sales_term_state)} and value: ${JSON.stringify(buf_sales_term_state, null, 4)}`);
-                let sales_term_state = BufferToObject(buf_sales_term_state, "GetSalesOrderState: bnf_sales_term_state > sales_term_state")
+                //showMsg(`buf_sales_term_state type: ${typeof(buf_sales_term_state)} and value: ${JS.ON.stringify(buf_sales_term_state, null, 4)}`);
+                const sales_term_state_obj = BufferToObject(buf_sales_term_state, "GetSalesOrderState: bnf_sales_term_state > sales_term_state")
+                let sales_term_state = Object.assign(new SalesTermState(), sales_term_state_obj);
                 showMsg(`sales_term_state type: ${typeof(sales_term_state)} and value: ${JSON.stringify(sales_term_state, null, 4)}`);
 
                 //update st state
@@ -435,6 +436,20 @@ class BMES_MGMT extends Contract {
 
         showMsg('============= END : GetAllOrder =============');
         return JSON.stringify(allResults);
+    }
+
+    async PostSalesOrder(ctx, so_json) {
+        showMsg('============= START : PostSalesOrder  =============');
+
+        const so_obj = JSON.parse(so_json);
+        const so = Object.assign(new SalesOrder(), so_obj);
+        const so_id = so.ID;
+
+        //generate composite_key
+        let so_key = ctx.stub.createCompositeKey('bmes', ['salesorder', so_id]);
+        let res = await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(so_obj)));
+
+        return `sales order ${so_obj} is posted! and response: ${res}`;
     }
 
     async UpdateSalesOrder(ctx, so_json) {
@@ -569,6 +584,44 @@ class BMES_MGMT extends Contract {
         return JSON.stringify(allResults);
     }
 
+    //composite key length = 55 bytes
+    async PostTesting(ctx, data) {
+        showMsg('============= START : PostTesting ===========');        
+        const obj = JSON.parse(data);
+        const id = obj.ID;
+
+        //generate composite_key
+        let so_key = ctx.stub.createCompositeKey('bmes', ['test', id]);
+        let res = await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(obj)));
+        return `payload ${obj} is posted! and response: ${res}`;
+        showMsg('============= END : PostTesting ===========');
+    }
+
+
+    async GetTesting(ctx, id) {
+        showMsg('============= START : GetTesting ===========');
+        //generate composite_key
+        let key = ctx.stub.createCompositeKey('bmes', ['test', id]);
+        //showMsg(`key type: ${typeof (key)} and value: ${JSON.stringify(key)}`);
+
+        //find state by the composite_key
+        let buf = await ctx.stub.getState(key);
+        //showMsg(`buf type: ${typeof (buf)} and value: ${JSON.stringify(buf)}`);
+
+        //check whether workplan exist or not
+        if (!buf || buf.length === 0) {
+            throw new Error(`The state of id= ${id} does not exist`);
+        }
+        //showMsg(`so_buf type: ${typeof (so_buf)} and value: ${JSON.stringify(so_buf, null, 4)}`); 
+
+        const obj = BufferToObject(buf, "buf to object");
+        const json = JSON.stringify(obj);
+       // showMsg(`so_json type: ${typeof (json)} and value: ${JSON.stringify(json, null, 4)}`);
+
+        showMsg('============= END : GetTesting ===========');
+        //return information
+        return json.toString();
+    }    
 }
 
 module.exports = BMES_MGMT;

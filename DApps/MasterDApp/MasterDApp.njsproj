@@ -32,11 +32,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="app.js" />
-    <Content Include="cleanup.js">
-      <SubType>Code</SubType>
-    </Content>
     <Content Include="hlf-client.js" />
     <Content Include="install-module.sh" />
+    <Content Include="performance_test.js">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="routes\index.js" />
     <Content Include="routes\users.js" />
     <Content Include="package.json" />

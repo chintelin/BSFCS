@@ -8,6 +8,8 @@ const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('./../lib/CAUtil.js');
 const { buildCCPOrg1, buildCCPOrg2, buildWallet } = require('./../lib/AppUtil.js');
+const { insertRecord } = require('./performance_test');
+
 const channelMgmtName = 'channelmgmt';
 const chaincodeMgmtName = 'bmes-mgmt';
 const channelProdName = 'channelprod';
@@ -180,6 +182,10 @@ async function UpdateWP(wp_json) {
 	return result.toString();
 }
 
+async function PostSO(so_json) {
+	let result = await contractMgmt.submitTransaction('PostSalesOrder', so_json);
+	return result.toString();
+}
 
 async function GetAllSO() {
 	let result = await contractMgmt.evaluateTransaction('GetAllOrder');
@@ -259,6 +265,29 @@ async function InitializeMamt() {
 	return resultStr;
 }
 
+async function PostTesting(input_json) {
+	const startTime = Date.now(); // Capture the start time
+	let result = await contractMgmt.submitTransaction('PostTesting', input_json);
+	const endTime = Date.now(); // Capture the end time
+	const responseTime = endTime - startTime; // Calculate the response time
+	await insertRecord(input_json, "", "post", responseTime);
+	return result.toString();
+}
+
+async function GetTesting(query_id) {
+	const startTime = Date.now(); // Capture the start time
+	let state = await contractMgmt.evaluateTransaction('GetTesting', query_id);
+	const endTime = Date.now(); // Capture the end time
+	const responseTime = endTime - startTime; // Calculate the response time
+	await insertRecord(query_id, state, "get", responseTime);
+	let stateStr = state.toString();
+	return stateStr;
+}
+
+async function ClearTesting() {
+	await clearPerformanceRecordTable();
+	return;
+}
 
 
 StartConnectingToHlfNetwork();
@@ -272,6 +301,7 @@ exports.GetWP = GetWP;
 
 exports.GetAllSO = GetAllSO;
 exports.GetSO = GetSO;
+exports.PostSO = PostSO;
 exports.GetSOState = GetSOState;
 exports.UpdateSO = UpdateSO;
 
@@ -287,3 +317,7 @@ exports.ApplyEngineeringChangeOrderToMgmt = ApplyEngineeringChangeOrderToMgmt;
 
 exports.InitializeProd = InitializeProd;
 exports.InitializeMamt = InitializeMamt;
+
+exports.PostTesting = PostTesting;
+exports.GetTesting = GetTesting;
+exports.ClearTesting = ClearTesting;

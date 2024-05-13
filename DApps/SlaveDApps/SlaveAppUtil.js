@@ -175,9 +175,7 @@ async function ConfigureDualConveyor()
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."xQright"',true,"Boolean")
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."Hmi""xQA1_A1"',true,"Boolean")
     await WriteValue('ns=3;s="xQA1_A1"',true,"Boolean")
-    await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."xQright"',true,"Boolean")
-    await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."Hmi""xQA1_A1"',true,"Boolean")
-    await WriteValue('ns=3;s="xQA1_A1"',true,"Boolean")
+
     //Drive1變慢
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."xQslow"',true,"Boolean")
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive1"."Hmi""xQA1_A3"',true,"Boolean")
@@ -185,13 +183,15 @@ async function ConfigureDualConveyor()
     //Drive2往右
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive2"."xQright"',true,"Boolean")
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive2"."Hmi""xQA1_A1"',true,"Boolean")
-    await WriteValue('ns=3;s="xQA2_A1"',true,"Boolean")
+    await WriteValue('ns=3;s="xQA2_A1"', true, "Boolean")
+
     //Drive2變慢
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive2"."xQslow"',true,"Boolean")
     await WriteValue('ns=3;s="dbActuatorCntr"."Drive2"."Hmi""xQA1_A3"',true,"Boolean")
-    await WriteValue('ns=3;s="xQA2_A3"',true,"Boolean")
-    //STOPER降下
-    await WriteValue('ns=3;s="xK1_MB30"',true,"Boolean")
+    await WriteValue('ns=3;s="xQA2_A3"',false,"Boolean")
+    //Stoper 2降下
+    await WriteValue('ns=3;s="xK1_MB30"', true, "Boolean")
+
 };
 
 async function ConfigureSingleConveyor()

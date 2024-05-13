@@ -140,6 +140,10 @@ async function main() {
 			console.log('\n--> Submit Transaction: InitCarrier....');
 			result = await contractProd.submitTransaction('InitCarrier');
 
+			console.log('\n--> Submit Transaction: UpdateWorkPlan 1001....');
+			let newWP = '{"ID":"1001","TransitionList":{"20":{"ID":"20","WorkStation":"Magazine","Function":"0","Parameter":"0","OK_To":"31"},"30":{"ID":"30","WorkStation":"Press","Function":"25","Parameter":"5","OK_To":"31"},"31":{"ID":"31","WorkStation":"Press","Function":"35","Parameter":"5","OK_To":"41"},"40":{"ID":"40","WorkStation":"ASRS","Function":"1","Parameter":"1210","OK_To":"done"},"41":{"ID":"41","WorkStation":"ASRS","Function":"1","Parameter":"1211","OK_To":"done"},"init":{"ID":"init","WorkStation":"ASRS","Function":"2","Parameter":"210","OK_To":"20"},"re":{"ID":"re","WorkStation":"ASRS","Function":"2","Parameter":"1210","OK_To":"31"}}}';
+			await contractMgmt.submitTransaction('UpdateWorkPlan', newWP);
+
 			return;
 
 			console.log('\n--> Submit Transaction: StartSaleOrder with id=1000....');

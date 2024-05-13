@@ -387,7 +387,7 @@ namespace MasterSystemView
 
                 Task.Run(async () =>
                 {
-                    await InterfacesToMasterDApp.UpdateSalesOrderAsync(so);
+                    await InterfacesToMasterDApp.PostSalesOrderAsync(so);
                 });
             }
             else

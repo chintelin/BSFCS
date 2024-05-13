@@ -25,6 +25,24 @@
 			"response": []
 		},
 		{
+			"name": "InitializeLedger (useless)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:1337/GetAllWorkStation",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"GetAllWorkStation"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "GetAllObjectFromMgmt",
 			"request": {
 				"method": "GET",
@@ -268,13 +286,40 @@
 			"response": []
 		},
 		{
+			"name": "PostWorkStation Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\"ID\": \"1099\",\r\n  \"SalesTerms\": {\r\n      \"1\": {\r\n          \"ID\": \"1\",\r\n          \"ProductName\": \"Product Test\",\r\n          \"RefWorkPlan\": \"1000\"\r\n      }\r\n }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:1337/PostSO",
+					"host": [
+						"localhost"
+					],
+					"port": "1337",
+					"path": [
+						"PostSO"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "ApplyEngineeringChangeOrder",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\"salesOrder\":\"1000\", \"salesTerm\":\"1\", \"newWorkPlan\":\"1001\"}",
+					"raw": "{\"SalesOrder\":\"1000\", \"SalesTerm\":\"1\", \"NewWorkPlan\":\"1001\"}",
 					"options": {
 						"raw": {
 							"language": "json"

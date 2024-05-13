@@ -83,6 +83,18 @@ router.get('/GetSO', async function (req, res) {
         res.end(ex.toString());
     }
 });
+
+router.post('/PostSO', async function (req, res) {
+    try {
+        const so_obj = req.body;
+        const so_json = JSON.stringify(so_obj);
+        let result = await client.PostSO(so_json);
+        res.end(result);
+    }
+    catch (ex) {
+        res.end(ex.toString());
+    }
+});
 router.get('/GetSOState', async function (req, res) {
     try {
         let id = req.query.ID.toString();
@@ -168,8 +180,6 @@ router.post('/ApplyEngineeringChangeOrder', async function (req, res) {
 //});
 
 
-
-
 router.get('/GetAllObjectFromMgmt', async function (req, res) {
     let result = await client.GetAllObjectFromMgmt();
     res.end(result)
@@ -178,4 +188,46 @@ router.get('/GetAllObjectFromProd', async function (req, res) {
     let result = await client.GetAllObjectFromProd();
     res.end(result)
 });
+
+router.get('/GetTesting', async function (req, res) {
+    try {
+        let key = req.query.key.toString();
+        let result = await client.GetTesting(key);
+        res.end(result)
+    }
+    catch (ex) {
+        res.end(ex.toString());
+    }
+});
+
+router.post('/PostTesting', async function (req, res) {
+    try {
+        const so_obj = req.body;
+        const so_json = JSON.stringify(so_obj);
+        let result = await client.PostTesting(so_json);
+        res.end(result);
+    }
+    catch (ex) {
+        res.end(ex.toString());
+    }
+});
+
+/*
+router.post('/PostSO', async function (req, res) {
+    try {
+        const so_obj = req.body;
+        const so_json = JSON.stringify(so_obj);
+        let result = await client.PostSO(so_json);
+        res.end(result);
+    }
+    catch (ex) {
+        res.end(ex.toString());
+    }
+});
+*/
+
+router.get('/ClearTesting', async function (req, res) {
+        await client.ClearTesting();
+});
+
 module.exports = router;

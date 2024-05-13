@@ -191,6 +191,7 @@ namespace MasterSystemView
                 {
                     Console.WriteLine("Failed to retrieve data. Status code: " + response_GetAllSo.StatusCode);
                 }
+
             }
             catch (Exception ex)
             {
@@ -210,6 +211,31 @@ namespace MasterSystemView
                 string json = JsonConvert.SerializeObject(updateInfo);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 HttpResponseMessage response = await client.PutAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("Response: " + responseContent);
+                }
+                else
+                {
+                    Console.WriteLine("Failed to send  data. Status code: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+        }
+
+        static public async Task PostSalesOrderAsync(SalesOrderDef updateInfo)
+        {
+            string url = HostUrl + "/PostSO";
+            try
+            {
+                string json = JsonConvert.SerializeObject(updateInfo);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                HttpResponseMessage response = await client.PostAsync(url, content);
 
                 if (response.IsSuccessStatusCode)
                 {

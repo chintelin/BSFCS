@@ -130,14 +130,26 @@ async function main() {
         //Switch to Reset 
         await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', true, "Boolean");
         await sleep(100);
+        await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', true, "Boolean");
+        await sleep(500);
+        await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', false, "Boolean");
+        await sleep(100);
         await AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', false, "Boolean");
         iOpMode = null;
+        const startTime = new Date();
         console.info('Wait for iOpMode turn to 20');
         while (iOpMode != 20) {
             await AppCon.ReadValue('ns=3;s="dbVar"."OpMode"."iOpMode"').then(res => {
                 iOpMode = res.value.value;
                 if (iOpMode == 20) {
                     console.log(iOpMode)
+                }
+
+                const currentTime = new Date();
+                const elapsedTime = currentTime - startTime;
+                if (elapsedTime > 1000) {
+                    AppCon.WriteValue('ns=3;s="dbVar"."Hmi"."Btn"."Reset"."xBit"', false, "Boolean")
+                    AppCon.WriteValue('ns=3;s="dbVar"."OpMode"."iOpMode"', 20, "Int16")
                 }
             });
         }
