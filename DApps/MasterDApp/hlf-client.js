@@ -270,7 +270,9 @@ async function PostTesting(input_json) {
 	let result = await contractMgmt.submitTransaction('PostTesting', input_json);
 	const endTime = Date.now(); // Capture the end time
 	const responseTime = endTime - startTime; // Calculate the response time
-	await insertRecord(input_json, "", "post", responseTime);
+	const input = JSON.parse(input_json);
+	const id = input.ID;
+	await insertRecord(input.ID, input.payload, "post", responseTime);
 	return result.toString();
 }
 

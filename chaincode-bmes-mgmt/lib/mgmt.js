@@ -589,11 +589,12 @@ class BMES_MGMT extends Contract {
         showMsg('============= START : PostTesting ===========');        
         const obj = JSON.parse(data);
         const id = obj.ID;
+        const payload = obj.payload;
 
         //generate composite_key
         let so_key = ctx.stub.createCompositeKey('bmes', ['test', id]);
-        let res = await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(obj)));
-        return `payload ${obj} is posted! and response: ${res}`;
+        let res = await ctx.stub.putState(so_key, Buffer.from(JSON.stringify(payload)));
+        return `payload ${payload} is posted! and response: ${res}`;
         showMsg('============= END : PostTesting ===========');
     }
 
